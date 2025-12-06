@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/lib/auth";
 import { getOwnedGames } from "@/lib/steam";
 
-export const runtime = 'edge';
-
 export async function GET(req: NextRequest) {
     try {
         const session = await getServerSession(getAuthOptions(req));
