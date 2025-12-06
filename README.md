@@ -1,20 +1,44 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Getting
 
-First, run the development server:
+### Configuration
+
+1.  **Steam API Key**:
+    -   Go to [Steam Web API Key](https://steamcommunity.com/dev/apikey)
+    -   Domain Name: `localhost` (or your domain)
+    -   Copy the Key.
+
+2.  **Environment Variables**:
+    Create `.env.local` in the root:
+    ```env
+    # Steam Web API Key
+    STEAM_CLIENT_SECRET=AddYourKeyHere
+
+    # Random string for encryption
+    NEXTAUTH_SECRET=run_openssl_rand_base64_32
+
+    # App URL (default for dev)
+    NEXTAUTH_URL=http://localhost:3000
+
+    # (Optional) Proxy for Steam API Access (Common in CN)
+    # HTTPS_PROXY=http://127.0.0.1:7890
+    # HTTP_PROXY=http://127.0.0.1:7890
+    ```
+
+### Running the App
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
+
+### Features Guide
+-   **Login**: Use the specific button in header.
+-   **Dashboard**: View games played in the last year (365 days).
+-   **Review**: Click "Review" on any game to set a rating, status, and comment.
+-   **Summary**: Click "View Summary" to generate an infographic and download it.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
