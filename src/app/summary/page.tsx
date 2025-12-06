@@ -133,6 +133,7 @@ export default function SummaryPage() {
                     cacheBust: true,
                     backgroundColor: '#1A1B1E',
                     pixelRatio: 2,
+                    // @ts-ignore - skipOnError is a valid runtime option but missing from types
                     skipOnError: true, // Ignore image loading errors
                     style: {
                         // When hidden, sometimes layout is weird. 
