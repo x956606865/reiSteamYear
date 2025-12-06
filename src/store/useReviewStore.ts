@@ -3,11 +3,15 @@ import { persist } from 'zustand/middleware';
 import { SteamGame } from '@/lib/steam';
 
 export interface GameReview {
-    rating: number; // 0-100
+    rating: number; // Final calculated average
+    ratingGameplay?: number;
+    ratingVisuals?: number; // Music & Art
+    ratingStory?: number;
+    ratingSubjective?: number;
     status: 'played' | 'beaten' | 'dropped';
-    comment: string;
+    comment?: string;
+    isBeatable?: boolean;
     excluded?: boolean;
-    isBeatable?: boolean; // Default true
 }
 
 export interface ManualGame extends SteamGame {

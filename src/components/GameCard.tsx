@@ -29,14 +29,11 @@ export function GameCard({ game }: GameCardProps) {
     // Default to 80 if no rating, but only visually when we start interacting?
     // Actually if we initialize with 80, it might show 80.
     // We sync with review.rating.
-    const [localRating, setLocalRating] = useState<number>(review?.rating ?? 80);
     const [isBeatable, setIsBeatable] = useState<boolean>(review?.isBeatable ?? true);
 
     // Sync local state when external review changes (e.g. from modal)
     useEffect(() => {
-        if (review?.rating !== undefined) {
-            setLocalRating(review.rating);
-        }
+        // No longer syncing numeric rating locally, using direct store update for sliders
     }, [review?.rating]);
 
     // Steam image URL format
@@ -51,7 +48,7 @@ export function GameCard({ game }: GameCardProps) {
     // Helper to update review without overwriting other fields
     const handleUpdate = (updates: Partial<GameReview>) => {
         const currentReview = review || {
-            rating: localRating,
+            rating: 80, // Default base
             status: 'played',
             comment: '',
             isBeatable: true,
@@ -64,13 +61,6 @@ export function GameCard({ game }: GameCardProps) {
         });
     };
 
-    const handleSliderChange = (val: number) => {
-        setLocalRating(val);
-    };
-
-    const handleSliderEnd = (val: number) => {
-        handleUpdate({ rating: val });
-    };
 
     const handleStatusChange = (val: string) => {
         handleUpdate({ status: val as GameReview['status'] });
@@ -131,36 +121,63 @@ export function GameCard({ game }: GameCardProps) {
                         <Badge variant="outline" color="gray" fullWidth radius="sm">无尽 / 不可通关</Badge>
                     )}
 
-                    <Group gap="xs" align="flex-end">
-                        <Slider
-                            style={{ flex: 1 }}
-                            size="sm"
-                            value={localRating}
-                            onChange={handleSliderChange}
-                            onChangeEnd={handleSliderEnd}
-                            min={0}
-                            max={100}
-                            color="yellow"
-                            mb={4}
-                        />
+                    {/* Rating Section */}
+                    <Stack gap={4} mt="xs">
+                        <Group justify="space-between">
+                            <Text size="sm" fw={700}>总分: {review?.rating ?? 80}</Text>
+                        </Group>
 
-                        <NumberInput
-                            value={localRating}
-                            onChange={(val) => {
-                                const num = Number(val);
-                                setLocalRating(num);
-                                handleUpdate({ rating: num });
-                            }}
-                            min={0}
-                            max={100}
-                            allowNegative={false}
-                            clampBehavior="strict"
-                            size="xs"
-                            w={50}
-                            hideControls
-                            styles={{ input: { textAlign: 'center', padding: 0 } }}
-                        />
-                    </Group>
+                        {[
+                            { label: '游戏性', key: 'ratingGameplay' as const },
+                            { label: '音画', key: 'ratingVisuals' as const },
+                            { label: '剧情', key: 'ratingStory' as const },
+                            { label: '主观', key: 'ratingSubjective' as const },
+                        ].map((item) => {
+                            // Default value logic: existing sub-rating -> existing total rating -> 80
+                            const r = review as any; // Cast for dynamic access if needed or typed
+                            const val = r?.[item.key] ?? r?.rating ?? 80;
+
+                            return (
+                                <Group key={item.key} gap="xs" align="center">
+                                    <Text size="xs" w={45} c="dimmed">{item.label}</Text>
+                                    <Slider
+                                        style={{ flex: 1 }}
+                                        size="xs"
+                                        color="yellow"
+                                        value={val}
+                                        min={0}
+                                        max={100}
+                                        label={null}
+                                        onChange={(v) => {
+                                            // Calculate new average immediately
+                                            const currentReview = reviews[game.appid] || {};
+                                            const currentVals = {
+                                                ratingGameplay: currentReview.ratingGameplay ?? currentReview.rating ?? 80,
+                                                ratingVisuals: currentReview.ratingVisuals ?? currentReview.rating ?? 80,
+                                                ratingStory: currentReview.ratingStory ?? currentReview.rating ?? 80,
+                                                ratingSubjective: currentReview.ratingSubjective ?? currentReview.rating ?? 80,
+                                            };
+                                            const newVals = { ...currentVals, [item.key]: v };
+                                            const avg = Math.round(
+                                                (newVals.ratingGameplay + newVals.ratingVisuals + newVals.ratingStory + newVals.ratingSubjective) / 4
+                                            );
+
+                                            addReview(game.appid, {
+                                                ...currentReview,
+                                                ...newVals,
+                                                rating: avg,
+                                                // Ensure defaults exist for others if first time
+                                                status: currentReview.status || 'played',
+                                                isBeatable: currentReview.isBeatable ?? true,
+                                                excluded: currentReview.excluded ?? false,
+                                            });
+                                        }}
+                                    />
+                                    <Text size="xs" w={22} ta="right" variant="text">{val}</Text>
+                                </Group>
+                            );
+                        })}
+                    </Stack>
 
                     <Group justify="flex-end" gap="xs">
                         {/* Comment Trigger */}
