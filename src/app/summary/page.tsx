@@ -16,7 +16,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function SummaryPage() {
     const { data: session } = useSession();
     const { data: gamesData, isLoading } = useSWR(session ? '/api/games' : null, fetcher);
-    const { reviews } = useReviewStore();
+    const { reviews, manualGames } = useReviewStore();
     const cardRef = useRef<HTMLDivElement>(null);
 
     const summaryData = useMemo(() => {
@@ -26,24 +26,37 @@ export default function SummaryPage() {
         let dropped = 0;
         let played = 0;
 
-        // We only have reviews for some games.
-        // Also we need to iterate ALL games or just reviewed ones?
-        // Summary usually includes only games from the year?
-        // User might review games not in the year? 
-        // We only care about reviews for games IN the gamesData list (Played this year).
+        const apiGames = gamesData.games as any[];
+        const manualGamesList = Object.values(manualGames);
 
-        const allGames = gamesData.games as any[]; // Type assertion needed or import type
+        // Deduplicate using Set same as Dashboard
+        const apiGameIds = new Set(apiGames.map(g => g.appid));
+        const uniqueManualGames = manualGamesList.filter(g => !apiGameIds.has(g.appid));
+        const allGames = [...apiGames, ...uniqueManualGames];
 
         // Filter out excluded games
         const games = allGames.filter((g) => !reviews[g.appid]?.excluded);
-
         const ratedGames = [];
+
+        // Completion Stats
+        let beatableCount = 0;
+        let beatenCount = 0;
 
         for (const game of games) {
             const r = reviews[game.appid];
+            // Default isBeatable to true unless explicitly false
+            const isBeatable = r?.isBeatable !== false;
+
+            if (isBeatable) {
+                beatableCount++;
+                if (r?.status === 'beaten') {
+                    beatenCount++;
+                    beaten++;
+                }
+            }
+
             if (r) {
-                if (r.status === 'beaten') beaten++;
-                if (r.status === 'dropped') dropped++;
+                if (r.status === 'dropped') dropped++; // Dropped might still exist from old data
                 if (r.status === 'played') played++;
                 if (r.rating > 0) {
                     ratedGames.push({ ...game, rating: r.rating });
@@ -61,16 +74,18 @@ export default function SummaryPage() {
         // Sort rated games
         ratedGames.sort((a, b) => b.rating - a.rating);
 
-        // Calculate Stats based on filtered games
+        // Calculate Stats
         const totalPlaytime = games.reduce((acc, g) => acc + g.playtime_forever, 0);
+        const completionRate = beatableCount > 0 ? Math.round((beatenCount / beatableCount) * 100) : 0;
 
         return {
             user: { name: session.user.name || 'User', image: session.user.image || '' },
-            totalGames: games.length, // Count of filtered games
+            totalGames: games.length,
             totalPlaytime: totalPlaytime,
-            beatenCount: beaten,
+            beatenCount: beatenCount,
             droppedCount: dropped,
             playedCount: played,
+            completionRate, // New field
             topGames: ratedGames.slice(0, 3)
         };
     }, [gamesData, reviews, session]);

@@ -6,6 +6,8 @@ import { useSession } from 'next-auth/react';
 import { GameCard } from './GameCard';
 import type { SteamGame } from '@/lib/steam';
 import { useReviewStore } from '@/store/useReviewStore';
+import { useDisclosure } from '@mantine/hooks';
+import { AddGameModal } from './AddGameModal';
 
 const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -21,7 +23,8 @@ const fetcher = async (url: string) => {
 export function Dashboard() {
     const { data: session } = useSession();
     const { data, error, isLoading } = useSWR(session ? '/api/games' : null, fetcher);
-    const { reviews, addReview } = useReviewStore(); // Need addReview for restore
+    const { reviews, addReview, manualGames } = useReviewStore(); // Need addReview for restore, manualGames for merge
+    const [addGameOpened, { open: openAddGame, close: closeAddGame }] = useDisclosure(false);
 
     if (!session) {
         return (
@@ -43,15 +46,27 @@ export function Dashboard() {
         )
     }
 
-    if (!data?.games || data.games.length === 0) {
+    // Combine API games and Manual games
+    const apiGames = data?.games as SteamGame[] || [];
+    const manualGamesList = Object.values(manualGames);
+
+    // Deduplicate: If API has the game, prefer API? Or allow override?
+    // Let's just append manual games that are NOT in API games.
+    const apiGameIds = new Set(apiGames.map(g => g.appid));
+    const uniqueManualGames = manualGamesList.filter(g => !apiGameIds.has(g.appid));
+
+    const allGames = [...apiGames, ...uniqueManualGames];
+
+    // Sorting: Default by playtime
+    allGames.sort((a, b) => b.playtime_forever - a.playtime_forever);
+
+    if (!allGames || allGames.length === 0) {
         return (
             <Container py="xl">
                 <Text>No games found played in the last year.</Text>
             </Container>
         )
     }
-
-    const allGames = data.games as SteamGame[];
 
     // Filter games based on exclusion
     const activeGames = allGames.filter(g => !reviews[g.appid]?.excluded);
@@ -68,9 +83,15 @@ export function Dashboard() {
                         You played {activeGames.length} games in the last year
                         {totalPlaytime > 0 && <Text span size="md" fw={400} c="dimmed"> ({Math.round(totalPlaytime / 60)} hours total lifetime)</Text>}
                     </Text>
-                    <Button component="a" href="/summary" variant="light" size="compact-md">
-                        View Summary
-                    </Button>
+
+                    <Group>
+                        <Button variant="outline" onClick={openAddGame}>
+                            + Add Manual Game
+                        </Button>
+                        <Button component="a" href="/summary" variant="light">
+                            View Summary
+                        </Button>
+                    </Group>
                 </Group>
 
                 <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
@@ -102,6 +123,7 @@ export function Dashboard() {
                     </Stack>
                 )}
             </Stack>
+            <AddGameModal opened={addGameOpened} onClose={closeAddGame} />
         </Container>
     );
 }

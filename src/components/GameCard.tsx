@@ -1,4 +1,4 @@
-import { Card, Image, Text, Group, Badge, Button, Stack, SegmentedControl, Rating, Center, ActionIcon, Tooltip, NumberInput, Slider } from '@mantine/core';
+import { Card, Image, Text, Group, Badge, Button, Stack, SegmentedControl, Rating, Center, ActionIcon, Tooltip, NumberInput, Slider, Switch } from '@mantine/core';
 import type { SteamGame } from '@/lib/steam';
 import { useDisclosure } from '@mantine/hooks';
 import { ReviewModal } from './ReviewModal';
@@ -20,6 +20,7 @@ export function GameCard({ game }: GameCardProps) {
     // Actually if we initialize with 80, it might show 80.
     // We sync with review.rating.
     const [localRating, setLocalRating] = useState<number>(review?.rating ?? 80);
+    const [isBeatable, setIsBeatable] = useState<boolean>(review?.isBeatable ?? true);
 
     // Sync local state when external review changes (e.g. from modal)
     useEffect(() => {
@@ -35,15 +36,18 @@ export function GameCard({ game }: GameCardProps) {
 
     const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`;
     const hoursPlayed = Math.round(game.playtime_forever / 60);
+    const isExcluded = review?.excluded || false;
 
     // Helper to update review without overwriting other fields
     const handleUpdate = (updates: Partial<GameReview>) => {
         addReview(game.appid, {
-            rating: review?.rating || 80, // Default to 80 on first creation
-            status: review?.status || 'played',
-            comment: review?.comment || '',
-            excluded: review?.excluded || false,
-            ...updates
+            rating: localRating,
+            status: 'played',
+            comment: '',
+            isBeatable: true,
+            excluded: false, // Default to not excluded
+            ...review, // Apply existing review properties
+            ...updates // Apply specific updates
         });
     };
 
@@ -55,93 +59,113 @@ export function GameCard({ game }: GameCardProps) {
         handleUpdate({ rating: val });
     };
 
+    const handleStatusChange = (val: string) => {
+        handleUpdate({ status: val as GameReview['status'] });
+    };
+
+    const handleBeatableChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.currentTarget.checked;
+        setIsBeatable(val);
+        // If switching to Not Beatable, force status to 'played'
+        handleUpdate({ isBeatable: val, status: val ? review?.status || 'played' : 'played' });
+    };
+
     return (
         <>
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Card shadow="sm" padding="lg" radius="md" withBorder style={{ opacity: isExcluded ? 0.5 : 1 }}>
                 <Card.Section>
                     <Image
                         src={imageUrl}
-                        height={160}
+                        h={120}
                         alt={game.name}
-                        fallbackSrc="https://placehold.co/600x400?text=No+Image"
                     />
                 </Card.Section>
 
-                <Stack mt="md" gap="xs">
-                    <Group justify="space-between" align="start" wrap="nowrap">
-                        <Text fw={600} lineClamp={1} title={game.name}>{game.name}</Text>
-                        <Badge color="blue" variant="light" size="sm" style={{ flexShrink: 0 }}>
-                            {hoursPlayed} hrs
-                        </Badge>
+                <Group justify="space-between" mt="md" mb="xs">
+                    <Text fw={600} lineClamp={1} title={game.name} style={{ flex: 1 }}>{game.name}</Text>
+                    {review?.status === 'beaten' && <Badge color="green" variant="light">Beaten</Badge>}
+                    {review?.status === 'dropped' && <Badge color="red" variant="light">Dropped</Badge>}
+                </Group>
+
+                <Text size="sm" c="dimmed" mb="md">
+                    Playtime: {hoursPlayed} hrs
+                </Text>
+
+                <Stack gap="xs">
+                    {/* Switch for Beatable */}
+                    <Group justify="space-between">
+                        <Text size="xs" c="dimmed">Story / Beatable?</Text>
+                        <Switch
+                            size="xs"
+                            checked={isBeatable}
+                            onChange={handleBeatableChange}
+                        />
                     </Group>
 
-                    <Stack gap={8}>
-                        {/* Status Switcher */}
+                    {isBeatable ? (
                         <SegmentedControl
-                            fullWidth
                             size="xs"
-                            value={review?.status || 'played'}
-                            onChange={(val) => handleUpdate({ status: val as GameReview['status'] })}
+                            fullWidth
+                            value={review?.status === 'beaten' ? 'beaten' : 'played'}
+                            onChange={handleStatusChange}
                             data={[
-                                { label: 'Played', value: 'played' },
                                 { label: 'Beaten', value: 'beaten' },
-                                { label: 'Dropped', value: 'dropped' },
+                                { label: 'Not Beaten', value: 'played' },
                             ]}
-                            color={review?.status === 'beaten' ? 'green' : review?.status === 'dropped' ? 'red' : 'blue'}
+                            color={review?.status === 'beaten' ? 'green' : 'blue'}
+                        />
+                    ) : (
+                        <Badge variant="outline" color="gray" fullWidth radius="sm">Endless / Unbeatable</Badge>
+                    )}
+
+                    <Group gap="xs" align="flex-end">
+                        <Slider
+                            style={{ flex: 1 }}
+                            size="sm"
+                            value={localRating}
+                            onChange={handleSliderChange}
+                            onChangeEnd={handleSliderEnd}
+                            min={0}
+                            max={100}
+                            color="yellow"
+                            mb={4}
                         />
 
-                        <Group justify="space-between" align="center" gap="xs">
-                            <Slider
-                                style={{ flex: 1 }}
-                                size="sm"
-                                // If localRating is 0 (and unreviewed), maybe we still show 0? 
-                                // But user wants default 80.
-                                // If we set value={localRating || 80}, it shows 80 for everything.
-                                // Let's rely on the interaction:
-                                // If I drag, it starts from where I clicked.
-                                // If I want 80 as default base, maybe we just use 0 visually until rated?
-                                value={localRating}
-                                onChange={handleSliderChange}
-                                onChangeEnd={handleSliderEnd}
-                                min={0}
-                                max={100}
-                                color="yellow"
-                            />
+                        <NumberInput
+                            value={localRating}
+                            onChange={(val) => {
+                                const num = Number(val);
+                                setLocalRating(num);
+                                handleUpdate({ rating: num });
+                            }}
+                            min={0}
+                            max={100}
+                            allowNegative={false}
+                            clampBehavior="strict"
+                            size="xs"
+                            w={50}
+                            hideControls
+                            styles={{ input: { textAlign: 'center', padding: 0 } }}
+                        />
+                    </Group>
 
-                            <NumberInput
-                                value={localRating}
-                                onChange={(val) => {
-                                    const num = Number(val);
-                                    setLocalRating(num);
-                                    handleUpdate({ rating: num });
-                                }}
-                                min={0}
-                                max={100}
-                                allowNegative={false}
-                                clampBehavior="strict"
-                                size="xs"
-                                w={50}
-                                hideControls
-                                styles={{ input: { textAlign: 'center', padding: 0 } }}
-                            />
+                    <Group justify="flex-end" gap="xs">
+                        {/* Comment Trigger */}
+                        <Tooltip label="Edit Comment">
+                            <ActionIcon variant={review?.comment ? 'filled' : 'light'} color="gray" onClick={open} size="sm">
+                                <IconMessageDots size={16} />
+                            </ActionIcon>
+                        </Tooltip>
 
-                            {/* Comment Trigger */}
-                            <Tooltip label="Edit Comment">
-                                <ActionIcon variant={review?.comment ? 'filled' : 'light'} color="gray" onClick={open}>
-                                    <IconMessageDots size={18} />
-                                </ActionIcon>
-                            </Tooltip>
-
-                            {/* Exclude Trigger */}
-                            <Tooltip label="Exclude from Summary">
-                                <ActionIcon variant="light" color="red" onClick={() => handleUpdate({ excluded: true })}>
-                                    <IconEyeOff size={18} />
-                                </ActionIcon>
-                            </Tooltip>
-                        </Group>
-                    </Stack>
+                        {/* Exclude Trigger */}
+                        <Tooltip label="Exclude from Summary">
+                            <ActionIcon variant="light" color="red" onClick={() => handleUpdate({ excluded: true })} size="sm">
+                                <IconEyeOff size={16} />
+                            </ActionIcon>
+                        </Tooltip>
+                    </Group>
                 </Stack>
-            </Card>
+            </Card >
             <ReviewModal opened={opened} onClose={close} game={game} />
         </>
     );
