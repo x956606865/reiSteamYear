@@ -1,9 +1,10 @@
-import { Card, Image, Text, Group, Badge, Button, Stack, SegmentedControl, Rating, Center, ActionIcon, Tooltip, NumberInput, Slider, Switch } from '@mantine/core';
+import { Card, Image, Text, Group, Badge, Button, Stack, SegmentedControl, Rating, Center, ActionIcon, Tooltip, NumberInput, Slider, Switch, Modal } from '@mantine/core';
 import type { SteamGame } from '@/lib/steam';
 import { useDisclosure } from '@mantine/hooks';
 import { ReviewModal } from './ReviewModal';
+import { EditManualGameModal } from './EditManualGameModal';
 import { useReviewStore, GameReview } from '@/store/useReviewStore';
-import { IconMessageDots, IconEyeOff } from '@tabler/icons-react';
+import { IconMessageDots, IconEyeOff, IconPencil, IconTrash } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 
 interface GameCardProps {
@@ -12,8 +13,17 @@ interface GameCardProps {
 
 export function GameCard({ game }: GameCardProps) {
     const [opened, { open, close }] = useDisclosure(false);
-    const { reviews, addReview } = useReviewStore();
+    const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
+    const { reviews, addReview, removeManualGame } = useReviewStore();
     const review = reviews[game.appid];
+
+    // ... logic ...
+
+    const handleDeleteManual = () => {
+        if (confirm(`确定要删除 "${game.name}" 吗？此操作无法撤销。`)) {
+            removeManualGame(game.appid);
+        }
+    };
 
     // Local state for smooth sliding. 
     // Default to 80 if no rating, but only visually when we start interacting?
@@ -163,10 +173,33 @@ export function GameCard({ game }: GameCardProps) {
                                 <IconEyeOff size={16} />
                             </ActionIcon>
                         </Tooltip>
+
+                        {/* Manual Game Actions */}
+                        {(game as any).isManual && (
+                            <>
+                                <Tooltip label="编辑时长">
+                                    <ActionIcon variant="light" color="blue" onClick={openEdit} size="sm">
+                                        <IconPencil size={16} />
+                                    </ActionIcon>
+                                </Tooltip>
+                                <Tooltip label="删除游戏">
+                                    <ActionIcon variant="light" color="red" onClick={handleDeleteManual} size="sm">
+                                        <IconTrash size={16} />
+                                    </ActionIcon>
+                                </Tooltip>
+                            </>
+                        )}
                     </Group>
                 </Stack>
             </Card >
             <ReviewModal opened={opened} onClose={close} game={game} />
+            {(game as any).isManual && (
+                <EditManualGameModal
+                    opened={editOpened}
+                    onClose={closeEdit}
+                    game={game as any}
+                />
+            )}
         </>
     );
 }

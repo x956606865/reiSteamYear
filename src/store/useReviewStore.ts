@@ -19,6 +19,7 @@ interface ReviewStore {
     manualGames: Record<number, ManualGame>;
     addReview: (appid: number, review: GameReview) => void;
     addManualGame: (game: ManualGame) => void;
+    updateManualGame: (game: Partial<ManualGame> & { appid: number }) => void;
     removeManualGame: (appid: number) => void;
 }
 
@@ -34,6 +35,10 @@ export const useReviewStore = create<ReviewStore>()(
             addManualGame: (game) =>
                 set((state) => ({
                     manualGames: { ...state.manualGames, [game.appid]: game }
+                })),
+            updateManualGame: (game) =>
+                set((state) => ({
+                    manualGames: { ...state.manualGames, [game.appid]: { ...state.manualGames[game.appid], ...game } }
                 })),
             removeManualGame: (appid) =>
                 set((state) => {

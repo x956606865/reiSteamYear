@@ -11,70 +11,46 @@ interface ReviewModalProps {
 
 export function ReviewModal({ opened, onClose, game }: ReviewModalProps) {
     const { addReview, reviews } = useReviewStore();
-
-    const [rating, setRating] = useState<number>(5);
-    const [status, setStatus] = useState<string>('played');
     const [comment, setComment] = useState<string>('');
 
+    // Load existing comment when modal opens
     useEffect(() => {
         if (opened && reviews[game.appid]) {
-            const r = reviews[game.appid];
-            setRating(r.rating);
-            setStatus(r.status);
-            setComment(r.comment);
+            setComment(reviews[game.appid].comment || '');
         }
     }, [opened, reviews, game.appid]);
 
     const handleSave = () => {
+        const currentReview = reviews[game.appid] || {
+            rating: 0,
+            status: 'played',
+            comment: '',
+            isBeatable: true
+        };
+
         addReview(game.appid, {
-            rating,
-            status: status as GameReview['status'],
+            ...currentReview,
             comment,
         });
         onClose();
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title={`Review: ${game.name}`} centered>
+        <Modal opened={opened} onClose={onClose} title={`评价: ${game.name}`} centered>
             <Stack>
-                <Box>
-                    <Text fw={500} mb="xs">Rating ({rating}/100)</Text>
-                    <Slider
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={rating}
-                        onChange={setRating}
-                        marks={[
-                            { value: 0, label: '0' },
-                            { value: 50, label: '50' },
-                            { value: 100, label: '100' }
-                        ]}
-                    />
-                </Box>
-
-                <Select
-                    label="Status"
-                    data={[
-                        { value: 'played', label: 'Played' },
-                        { value: 'beaten', label: 'Beaten' },
-                        { value: 'dropped', label: 'Dropped' },
-                    ]}
-                    value={status}
-                    onChange={(val) => setStatus(val || 'played')}
-                />
-
                 <Textarea
-                    label="Comment"
-                    placeholder="Thoughts on the game..."
-                    minRows={3}
+                    label="写下您的感想"
+                    placeholder="这款游戏带给您什么样的体验？..."
+                    minRows={5}
+                    autosize
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
+                    data-autofocus
                 />
 
                 <Group justify="flex-end" mt="md">
-                    <Button variant="default" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSave}>Save</Button>
+                    <Button variant="default" onClick={onClose}>取消</Button>
+                    <Button onClick={handleSave}>保存评价</Button>
                 </Group>
             </Stack>
         </Modal>
