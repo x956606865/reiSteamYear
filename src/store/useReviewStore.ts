@@ -12,6 +12,8 @@ export interface GameReview {
     comment?: string;
     isBeatable?: boolean;
     excluded?: boolean;
+    skippedRatings?: string[]; // Keys of ratings to exclude from average
+    noRating?: boolean; // If true, game is not rated (skipped)
 }
 
 export interface ManualGame extends SteamGame {

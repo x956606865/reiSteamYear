@@ -58,7 +58,8 @@ export default function SummaryPage() {
             if (r) {
                 // if (r.status === 'dropped') dropped++; // Dropped might still exist from old data - REMOVED
                 if (r.status === 'played') played++;
-                if (r.rating > 0) {
+                // Only include in ratedGames if it has a rating > 0 AND is not explicitly unrated
+                if (r.rating > 0 && !r.noRating) {
                     ratedGames.push({ ...game, rating: r.rating });
                 }
             } else {
@@ -147,10 +148,16 @@ export default function SummaryPage() {
                     playtimeMinutes: g.playtime_forever,
                     review: r ? {
                         rating: r.rating,
+                        ratingGameplay: r.ratingGameplay,
+                        ratingVisuals: r.ratingVisuals,
+                        ratingStory: r.ratingStory,
+                        ratingSubjective: r.ratingSubjective,
+                        skippedRatings: r.skippedRatings,
                         status: r.status,
                         comment: r.comment,
                         isBeatable: r.isBeatable !== false, // Default true
-                        excluded: !!r.excluded
+                        excluded: !!r.excluded,
+                        noRating: !!r.noRating
                     } : null
                 };
             })

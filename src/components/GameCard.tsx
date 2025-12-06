@@ -29,12 +29,32 @@ export function GameCard({ game }: GameCardProps) {
     // Default to 80 if no rating, but only visually when we start interacting?
     // Actually if we initialize with 80, it might show 80.
     // We sync with review.rating.
+    // Local state for smooth sliding optimization
     const [isBeatable, setIsBeatable] = useState<boolean>(review?.isBeatable ?? true);
 
-    // Sync local state when external review changes (e.g. from modal)
+    // Default to 80 if no rating, but only visually when we start interacting?
+    const [localRatings, setLocalRatings] = useState({
+        ratingGameplay: review?.ratingGameplay ?? review?.rating ?? 80,
+        ratingVisuals: review?.ratingVisuals ?? review?.rating ?? 80,
+        ratingStory: review?.ratingStory ?? review?.rating ?? 80,
+        ratingSubjective: review?.ratingSubjective ?? review?.rating ?? 80,
+    });
+
+    // Sync local state when external review changes (e.g. initial load or other device)
+    // Only if the external value is significantly different to avoid loop? 
+    // Actually we just sync if "review" object identity changes significantly or on mount.
+    // To allow local sliding without jitter, we might want to avoid syncing *while* dragging?
+    // But since we lift state up on ChangeEnd, simple sync is okay if it doesn't fire on every drag.
     useEffect(() => {
-        // No longer syncing numeric rating locally, using direct store update for sliders
-    }, [review?.rating]);
+        if (review) {
+            setLocalRatings({
+                ratingGameplay: review.ratingGameplay ?? review.rating ?? 80,
+                ratingVisuals: review.ratingVisuals ?? review.rating ?? 80,
+                ratingStory: review.ratingStory ?? review.rating ?? 80,
+                ratingSubjective: review.ratingSubjective ?? review.rating ?? 80,
+            });
+        }
+    }, [review?.rating, review?.ratingGameplay, review?.ratingVisuals, review?.ratingStory, review?.ratingSubjective]);
 
     // Steam image URL format
     // appid needs to be used to construct URL if img_icon_url is icon
@@ -124,59 +144,133 @@ export function GameCard({ game }: GameCardProps) {
                     {/* Rating Section */}
                     <Stack gap={4} mt="xs">
                         <Group justify="space-between">
-                            <Text size="sm" fw={700}>总分: {review?.rating ?? 80}</Text>
+                            <Group gap={6}>
+                                <Text size="sm" c="dimmed">评分？</Text>
+                                <Switch
+                                    size="xs"
+                                    checked={!review?.noRating}
+                                    onChange={(e) => handleUpdate({ noRating: !e.currentTarget.checked })}
+                                />
+                            </Group>
+
+                            {!review?.noRating && (
+                                <Text size="sm" fw={700}>
+                                    总分: {(() => {
+                                        const activeKeys = [
+                                            'ratingGameplay',
+                                            'ratingVisuals',
+                                            'ratingStory',
+                                            'ratingSubjective'
+                                        ].filter(k => !review?.skippedRatings?.includes(k));
+
+                                        if (activeKeys.length === 0) return 0;
+
+                                        const sum = activeKeys.reduce((acc, key) => {
+                                            // @ts-ignore
+                                            return acc + (localRatings[key] ?? 0);
+                                        }, 0);
+
+                                        return Math.round(sum / activeKeys.length);
+                                    })()}
+                                </Text>
+                            )}
+                            {review?.noRating && <Text size="xs" c="dimmed">未评分</Text>}
                         </Group>
 
-                        {[
-                            { label: '游戏性', key: 'ratingGameplay' as const },
-                            { label: '音画', key: 'ratingVisuals' as const },
-                            { label: '剧情', key: 'ratingStory' as const },
-                            { label: '主观', key: 'ratingSubjective' as const },
-                        ].map((item) => {
-                            // Default value logic: existing sub-rating -> existing total rating -> 80
-                            const r = review as any; // Cast for dynamic access if needed or typed
-                            const val = r?.[item.key] ?? r?.rating ?? 80;
+                        {!review?.noRating && (
+                            [
+                                { label: '游戏性', key: 'ratingGameplay' as const },
+                                { label: '音画', key: 'ratingVisuals' as const },
+                                { label: '剧情', key: 'ratingStory' as const },
+                                { label: '主观', key: 'ratingSubjective' as const },
+                            ].map((item) => {
+                                const val = localRatings[item.key];
+                                const isSkipped = review?.skippedRatings?.includes(item.key);
+                                const canSkip = item.key !== 'ratingSubjective'; // Subjective is always active? Or user said "Gameplay, Visuals, Story" should have option.
 
-                            return (
-                                <Group key={item.key} gap="xs" align="center">
-                                    <Text size="xs" w={45} c="dimmed">{item.label}</Text>
-                                    <Slider
-                                        style={{ flex: 1 }}
-                                        size="xs"
-                                        color="yellow"
-                                        value={val}
-                                        min={0}
-                                        max={100}
-                                        label={null}
-                                        onChange={(v) => {
-                                            // Calculate new average immediately
-                                            const currentReview = reviews[game.appid] || {};
-                                            const currentVals = {
-                                                ratingGameplay: currentReview.ratingGameplay ?? currentReview.rating ?? 80,
-                                                ratingVisuals: currentReview.ratingVisuals ?? currentReview.rating ?? 80,
-                                                ratingStory: currentReview.ratingStory ?? currentReview.rating ?? 80,
-                                                ratingSubjective: currentReview.ratingSubjective ?? currentReview.rating ?? 80,
-                                            };
-                                            const newVals = { ...currentVals, [item.key]: v };
-                                            const avg = Math.round(
-                                                (newVals.ratingGameplay + newVals.ratingVisuals + newVals.ratingStory + newVals.ratingSubjective) / 4
-                                            );
+                                return (
+                                    <Group key={item.key} gap="xs" align="center">
+                                        <Text size="xs" w={45} c={isSkipped ? "dimmed" : undefined} td={isSkipped ? "line-through" : undefined}>
+                                            {item.label}
+                                        </Text>
+                                        <Slider
+                                            style={{ flex: 1, opacity: isSkipped ? 0.3 : 1 }}
+                                            size="xs"
+                                            color="yellow"
+                                            value={val}
+                                            min={0}
+                                            max={100}
+                                            label={null}
+                                            disabled={isSkipped}
+                                            onChange={(v) => {
+                                                setLocalRatings(prev => ({ ...prev, [item.key]: v }));
+                                            }}
+                                            onChangeEnd={(v) => {
+                                                const currentReview = reviews[game.appid] || {};
+                                                const updatedRatings = { ...localRatings, [item.key]: v };
 
-                                            addReview(game.appid, {
-                                                ...currentReview,
-                                                ...newVals,
-                                                rating: avg,
-                                                // Ensure defaults exist for others if first time
-                                                status: currentReview.status || 'played',
-                                                isBeatable: currentReview.isBeatable ?? true,
-                                                excluded: currentReview.excluded ?? false,
-                                            });
-                                        }}
-                                    />
-                                    <Text size="xs" w={22} ta="right" variant="text">{val}</Text>
-                                </Group>
-                            );
-                        })}
+                                                // Helper to calc average
+                                                const skipped = currentReview.skippedRatings || [];
+                                                const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
+                                                const active = allKeys.filter(k => !skipped.includes(k));
+                                                // @ts-ignore
+                                                const sum = active.reduce((acc, k) => acc + updatedRatings[k], 0);
+                                                const avg = active.length ? Math.round(sum / active.length) : 0;
+
+                                                addReview(game.appid, {
+                                                    ...currentReview,
+                                                    ...updatedRatings,
+                                                    rating: avg,
+                                                    status: currentReview.status || 'played',
+                                                    isBeatable: currentReview.isBeatable ?? true,
+                                                    excluded: currentReview.excluded ?? false,
+                                                    noRating: currentReview.noRating ?? false
+                                                });
+                                            }}
+                                        />
+                                        <Text size="xs" w={28} ta="right" c={isSkipped ? "dimmed" : undefined}>
+                                            {isSkipped ? '-' : val}
+                                        </Text>
+
+                                        <ActionIcon
+                                            size="xs"
+                                            variant="subtle"
+                                            color="gray"
+                                            style={{ opacity: canSkip && !isSkipped ? 0.3 : (isSkipped ? 1 : 0), cursor: canSkip ? 'pointer' : 'default' }}
+                                            onClick={() => {
+                                                if (!canSkip) return;
+                                                const currentReview = reviews[game.appid] || {};
+                                                const currentSkipped = currentReview.skippedRatings || [];
+                                                const newSkipped = currentSkipped.includes(item.key)
+                                                    ? currentSkipped.filter(k => k !== item.key)
+                                                    : [...currentSkipped, item.key];
+
+                                                // Recalc average
+                                                const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
+                                                const active = allKeys.filter(k => !newSkipped.includes(k));
+                                                // Use current local ratings for calc
+                                                // @ts-ignore
+                                                const sum = active.reduce((acc, k) => acc + localRatings[k], 0);
+                                                const avg = active.length ? Math.round(sum / active.length) : 0;
+
+                                                addReview(game.appid, {
+                                                    ...currentReview,
+                                                    ...localRatings,
+                                                    skippedRatings: newSkipped,
+                                                    rating: avg,
+                                                    status: currentReview.status || 'played',
+                                                    isBeatable: currentReview.isBeatable ?? true,
+                                                    excluded: currentReview.excluded ?? false,
+                                                    noRating: currentReview.noRating ?? false
+                                                });
+                                            }}
+                                        >
+                                            <IconEyeOff size={12} />
+                                        </ActionIcon>
+                                    </Group>
+                                );
+                            })
+                        )}
                     </Stack>
 
                     <Group justify="flex-end" gap="xs">
