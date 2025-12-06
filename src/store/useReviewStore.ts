@@ -36,7 +36,7 @@ export const useReviewStore = create<ReviewStore>()(
                 set((state) => ({
                     manualGames: { ...state.manualGames, [game.appid]: game }
                 })),
-            updateManualGame: (game) =>
+            updateManualGame: (game: Partial<ManualGame> & { appid: number }) =>
                 set((state) => ({
                     manualGames: { ...state.manualGames, [game.appid]: { ...state.manualGames[game.appid], ...game } }
                 })),
