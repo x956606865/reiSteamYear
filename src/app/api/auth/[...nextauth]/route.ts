@@ -4,9 +4,10 @@ import { getAuthOptions } from "@/lib/auth";
 
 async function handler(
     req: NextRequest,
-    ctx: { params: { nextauth: string[] } }
+    props: { params: Promise<{ nextauth: string[] }> }
 ) {
-    return NextAuth(req, ctx, getAuthOptions(req));
+    const params = await props.params;
+    return NextAuth(req, { params }, getAuthOptions(req));
 }
 
 export { handler as GET, handler as POST };

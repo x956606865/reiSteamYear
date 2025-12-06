@@ -50,14 +50,17 @@ export function GameCard({ game }: GameCardProps) {
 
     // Helper to update review without overwriting other fields
     const handleUpdate = (updates: Partial<GameReview>) => {
-        addReview(game.appid, {
+        const currentReview = review || {
             rating: localRating,
             status: 'played',
             comment: '',
             isBeatable: true,
-            excluded: false, // Default to not excluded
-            ...review, // Apply existing review properties
-            ...updates // Apply specific updates
+            excluded: false
+        };
+
+        addReview(game.appid, {
+            ...currentReview,
+            ...updates
         });
     };
 
