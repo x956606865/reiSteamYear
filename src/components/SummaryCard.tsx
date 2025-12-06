@@ -83,7 +83,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                                     <Stack mt="sm" gap={4} align="center">
                                         <Text fw={600} lineClamp={1} size="sm">{game.name}</Text>
                                         <Badge color="yellow" variant="filled">
-                                            {game.rating}/10
+                                            {game.rating}
                                         </Badge>
                                     </Stack>
                                 </Card>

@@ -1,10 +1,11 @@
 "use client";
 
 import useSWR from 'swr';
-import { SimpleGrid, Loader, Alert, Container, Text, Center, Stack, Group, Button } from '@mantine/core';
+import { SimpleGrid, Loader, Alert, Container, Text, Center, Stack, Group, Button, Card } from '@mantine/core';
 import { useSession } from 'next-auth/react';
 import { GameCard } from './GameCard';
 import type { SteamGame } from '@/lib/steam';
+import { useReviewStore } from '@/store/useReviewStore';
 
 const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -20,6 +21,7 @@ const fetcher = async (url: string) => {
 export function Dashboard() {
     const { data: session } = useSession();
     const { data, error, isLoading } = useSWR(session ? '/api/games' : null, fetcher);
+    const { reviews, addReview } = useReviewStore(); // Need addReview for restore
 
     if (!session) {
         return (
@@ -49,13 +51,22 @@ export function Dashboard() {
         )
     }
 
+    const allGames = data.games as SteamGame[];
+
+    // Filter games based on exclusion
+    const activeGames = allGames.filter(g => !reviews[g.appid]?.excluded);
+    const excludedGames = allGames.filter(g => reviews[g.appid]?.excluded);
+
+    // Recalculate stats
+    const totalPlaytime = activeGames.reduce((acc, g) => acc + g.playtime_forever, 0);
+
     return (
         <Container size="xl" py="xl">
             <Stack gap="lg">
                 <Group justify="space-between" align="center">
                     <Text size="xl" fw={700}>
-                        You played {data.count} games in the last year
-                        {data.total_playtime > 0 && <Text span size="md" fw={400} c="dimmed"> ({Math.round(data.total_playtime / 60)} hours total lifetime)</Text>}
+                        You played {activeGames.length} games in the last year
+                        {totalPlaytime > 0 && <Text span size="md" fw={400} c="dimmed"> ({Math.round(totalPlaytime / 60)} hours total lifetime)</Text>}
                     </Text>
                     <Button component="a" href="/summary" variant="light" size="compact-md">
                         View Summary
@@ -63,10 +74,33 @@ export function Dashboard() {
                 </Group>
 
                 <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
-                    {data.games.map((game: SteamGame) => (
+                    {activeGames.map((game: SteamGame) => (
                         <GameCard key={game.appid} game={game} />
                     ))}
                 </SimpleGrid>
+
+                {/* Excluded Games Section */}
+                {excludedGames.length > 0 && (
+                    <Stack mt="xl" gap="xs">
+                        <Text size="sm" c="dimmed" fw={700} tt="uppercase">Excluded Games ({excludedGames.length})</Text>
+                        <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
+                            {excludedGames.map(game => (
+                                <Card key={game.appid} padding="xs" radius="md" withBorder bg="var(--mantine-color-gray-0)" style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>
+                                    <Group wrap="nowrap">
+                                        <Text size="sm" lineClamp={1} style={{ flex: 1 }}>{game.name}</Text>
+                                        <Button
+                                            size="compact-xs"
+                                            variant="subtle"
+                                            onClick={() => addReview(game.appid, { ...reviews[game.appid], excluded: false })}
+                                        >
+                                            Restore
+                                        </Button>
+                                    </Group>
+                                </Card>
+                            ))}
+                        </SimpleGrid>
+                    </Stack>
+                )}
             </Stack>
         </Container>
     );

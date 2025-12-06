@@ -5,6 +5,7 @@ export interface GameReview {
     rating: number; // 0-10
     status: 'played' | 'beaten' | 'dropped';
     comment: string;
+    excluded?: boolean;
 }
 
 interface ReviewStore {

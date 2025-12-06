@@ -32,7 +32,11 @@ export default function SummaryPage() {
         // User might review games not in the year? 
         // We only care about reviews for games IN the gamesData list (Played this year).
 
-        const games = gamesData.games as any[]; // Type assertion needed or import type
+        const allGames = gamesData.games as any[]; // Type assertion needed or import type
+
+        // Filter out excluded games
+        const games = allGames.filter((g) => !reviews[g.appid]?.excluded);
+
         const ratedGames = [];
 
         for (const game of games) {
@@ -57,10 +61,13 @@ export default function SummaryPage() {
         // Sort rated games
         ratedGames.sort((a, b) => b.rating - a.rating);
 
+        // Calculate Stats based on filtered games
+        const totalPlaytime = games.reduce((acc, g) => acc + g.playtime_forever, 0);
+
         return {
             user: { name: session.user.name || 'User', image: session.user.image || '' },
-            totalGames: gamesData.count,
-            totalPlaytime: gamesData.total_playtime,
+            totalGames: games.length, // Count of filtered games
+            totalPlaytime: totalPlaytime,
             beatenCount: beaten,
             droppedCount: dropped,
             playedCount: played,

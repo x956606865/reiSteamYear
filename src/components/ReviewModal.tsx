@@ -38,14 +38,18 @@ export function ReviewModal({ opened, onClose, game }: ReviewModalProps) {
         <Modal opened={opened} onClose={onClose} title={`Review: ${game.name}`} centered>
             <Stack>
                 <Box>
-                    <Text fw={500} mb="xs">Rating ({rating}/10)</Text>
+                    <Text fw={500} mb="xs">Rating ({rating}/100)</Text>
                     <Slider
-                        min={1}
-                        max={10}
+                        min={0}
+                        max={100}
                         step={1}
                         value={rating}
                         onChange={setRating}
-                        marks={[{ value: 1, label: '1' }, { value: 5, label: '5' }, { value: 10, label: '10' }]}
+                        marks={[
+                            { value: 0, label: '0' },
+                            { value: 50, label: '50' },
+                            { value: 100, label: '100' }
+                        ]}
                     />
                 </Box>
 

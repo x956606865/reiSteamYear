@@ -18,7 +18,7 @@ export async function getOwnedGames(steamId: string): Promise<SteamGame[]> {
 
     if (!apiKey) throw new Error("STEAM_CLIENT_SECRET is not set");
 
-    const url = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${apiKey}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true&format=json`;
+    const url = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${apiKey}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true&format=json&language=schinese`;
 
     const res = await fetch(url, { next: { revalidate: 3600 } });
 
