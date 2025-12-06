@@ -93,7 +93,20 @@ export default function SummaryPage() {
     const handleExport = async () => {
         if (cardRef.current) {
             try {
-                const dataUrl = await toPng(cardRef.current, { cacheBust: true, backgroundColor: '#1A1B1E' });
+                const dataUrl = await toPng(cardRef.current, {
+                    cacheBust: true,
+                    backgroundColor: '#1A1B1E',
+                    pixelRatio: 2, // Higher quality
+                    style: {
+                        margin: '0',
+                        transform: 'none',
+                        maxWidth: 'none',
+                        width: '800px', // Force content width
+                        boxSizing: 'border-box' // Ensure padding is included in width
+                    },
+                    // width: 800, // Let canvas auto-size to matched element width
+                    height: undefined
+                });
                 download(dataUrl, 'steam-year-summary.png');
             } catch (err) {
                 console.error('Export failed', err);
@@ -117,7 +130,7 @@ export default function SummaryPage() {
                         variant="gradient"
                         gradient={{ from: 'indigo', to: 'cyan' }}
                     >
-                        Download Summary
+                        保存总结图片
                     </Button>
 
                     <SummaryCard ref={cardRef} data={summaryData} />

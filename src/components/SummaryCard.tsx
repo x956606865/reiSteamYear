@@ -35,7 +35,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                 <Group>
                     <Avatar src={data.user.image} size="lg" radius="xl" />
                     <div>
-                        <Text size="xl" fw={700} c="white">{data.user.name}'s Year in Review</Text>
+                        <Text size="xl" fw={700} c="white">{data.user.name} 的年度游戏报告</Text>
                         <Text size="sm" c="dimmed">Powered by Steam</Text>
                     </div>
                     <IconTrophy size={48} color="gold" style={{ marginLeft: 'auto' }} />
@@ -43,17 +43,17 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
 
                 <SimpleGrid cols={3}>
                     <StatBox
-                        label="Total Games"
+                        label="游戏总数"
                         value={data.totalGames}
                         icon={<IconDeviceGamepad2 size={32} color="var(--mantine-color-blue-4)" />}
                     />
                     <StatBox
-                        label="Hours Played"
+                        label="游玩时长 (小时)"
                         value={Math.round(data.totalPlaytime / 60)}
                         icon={<IconClock size={32} color="var(--mantine-color-yellow-4)" />}
                     />
                     <StatBox
-                        label="Completion Rate"
+                        label="通关率"
                         value={`${data.completionRate}%`}
                         color="green"
                         icon={<IconTrophy size={32} color="var(--mantine-color-green-4)" />}
@@ -63,13 +63,13 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                 <Group grow>
                     <Card bg="dark.6" radius="md" p="md">
                         <Group justify="space-between">
-                            <Text fw={700} c="white">Games Beaten</Text>
+                            <Text fw={700} c="white">已通关</Text>
                             <Badge size="lg" color="green">{data.beatenCount}</Badge>
                         </Group>
                     </Card>
                     <Card bg="dark.6" radius="md" p="md">
                         <Group justify="space-between">
-                            <Text fw={700} c="white">Unfinished (Store)</Text>
+                            <Text fw={700} c="white">未完成 (可通关)</Text>
                             <Badge size="lg" color="gray">{data.droppedCount}</Badge>
                         </Group>
                     </Card>
@@ -78,7 +78,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                 {/* Top Games */}
                 {data.topGames.length > 0 && (
                     <Box>
-                        <Title order={3} mb="md" ta="center">Top Rated Games</Title>
+                        <Title order={3} mb="md" ta="center" c="white">年度最佳游戏</Title>
                         <SimpleGrid cols={3}>
                             {data.topGames.map(game => (
                                 <Card key={game.appid} padding="sm" radius="md" bg="dark.6">
@@ -91,7 +91,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                                         />
                                     </Card.Section>
                                     <Stack mt="sm" gap={4} align="center">
-                                        <Text fw={600} lineClamp={1} size="sm">{game.name}</Text>
+                                        <Text fw={600} lineClamp={1} size="sm" c="white">{game.name}</Text>
                                         <Badge color="yellow" variant="filled">
                                             {game.rating}
                                         </Badge>

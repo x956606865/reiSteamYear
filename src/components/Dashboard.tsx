@@ -29,7 +29,7 @@ export function Dashboard() {
     if (!session) {
         return (
             <Center h={400}>
-                <Text c="dimmed">Please sign in to view your games.</Text>
+                <Text c="dimmed">请登录查看您的游戏库</Text>
             </Center>
         );
     }
@@ -39,8 +39,8 @@ export function Dashboard() {
     if (error) {
         return (
             <Container py="xl">
-                <Alert color="red" title="Error">
-                    {error.status === 401 ? 'Unauthorized. Please try logging in again.' : 'Failed to load games.'}
+                <Alert color="red" title="错误">
+                    {error.status === 401 ? '授权失败，请重新登录。' : '加载游戏失败。'}
                 </Alert>
             </Container>
         )
@@ -63,7 +63,7 @@ export function Dashboard() {
     if (!allGames || allGames.length === 0) {
         return (
             <Container py="xl">
-                <Text>No games found played in the last year.</Text>
+                <Text>过去一年未发现游玩记录。</Text>
             </Container>
         )
     }
@@ -80,16 +80,16 @@ export function Dashboard() {
             <Stack gap="lg">
                 <Group justify="space-between" align="center">
                     <Text size="xl" fw={700}>
-                        You played {activeGames.length} games in the last year
-                        {totalPlaytime > 0 && <Text span size="md" fw={400} c="dimmed"> ({Math.round(totalPlaytime / 60)} hours total lifetime)</Text>}
+                        过去一年您游玩了 {activeGames.length} 款游戏
+                        {totalPlaytime > 0 && <Text span size="md" fw={400} c="dimmed"> (总时长 {Math.round(totalPlaytime / 60)} 小时)</Text>}
                     </Text>
 
                     <Group>
                         <Button variant="outline" onClick={openAddGame}>
-                            + Add Manual Game
+                            + 手动添加
                         </Button>
                         <Button component="a" href="/summary" variant="light">
-                            View Summary
+                            查看年度报告
                         </Button>
                     </Group>
                 </Group>
@@ -103,7 +103,7 @@ export function Dashboard() {
                 {/* Excluded Games Section */}
                 {excludedGames.length > 0 && (
                     <Stack mt="xl" gap="xs">
-                        <Text size="sm" c="dimmed" fw={700} tt="uppercase">Excluded Games ({excludedGames.length})</Text>
+                        <Text size="sm" c="dimmed" fw={700} tt="uppercase">已排除的游戏 ({excludedGames.length})</Text>
                         <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
                             {excludedGames.map(game => (
                                 <Card key={game.appid} padding="xs" radius="md" withBorder bg="var(--mantine-color-gray-0)" style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>
@@ -114,7 +114,7 @@ export function Dashboard() {
                                             variant="subtle"
                                             onClick={() => addReview(game.appid, { ...reviews[game.appid], excluded: false })}
                                         >
-                                            Restore
+                                            恢复
                                         </Button>
                                     </Group>
                                 </Card>

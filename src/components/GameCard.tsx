@@ -83,18 +83,18 @@ export function GameCard({ game }: GameCardProps) {
 
                 <Group justify="space-between" mt="md" mb="xs">
                     <Text fw={600} lineClamp={1} title={game.name} style={{ flex: 1 }}>{game.name}</Text>
-                    {review?.status === 'beaten' && <Badge color="green" variant="light">Beaten</Badge>}
-                    {review?.status === 'dropped' && <Badge color="red" variant="light">Dropped</Badge>}
+                    {review?.status === 'beaten' && <Badge color="green" variant="light">已通关</Badge>}
+                    {review?.status === 'dropped' && <Badge color="red" variant="light">已弃坑</Badge>}
                 </Group>
 
                 <Text size="sm" c="dimmed" mb="md">
-                    Playtime: {hoursPlayed} hrs
+                    游玩时长: {hoursPlayed} 小时
                 </Text>
 
                 <Stack gap="xs">
                     {/* Switch for Beatable */}
                     <Group justify="space-between">
-                        <Text size="xs" c="dimmed">Story / Beatable?</Text>
+                        <Text size="xs" c="dimmed">剧情 / 可通关？</Text>
                         <Switch
                             size="xs"
                             checked={isBeatable}
@@ -109,13 +109,13 @@ export function GameCard({ game }: GameCardProps) {
                             value={review?.status === 'beaten' ? 'beaten' : 'played'}
                             onChange={handleStatusChange}
                             data={[
-                                { label: 'Beaten', value: 'beaten' },
-                                { label: 'Not Beaten', value: 'played' },
+                                { label: '已通关', value: 'beaten' },
+                                { label: '未通关', value: 'played' },
                             ]}
                             color={review?.status === 'beaten' ? 'green' : 'blue'}
                         />
                     ) : (
-                        <Badge variant="outline" color="gray" fullWidth radius="sm">Endless / Unbeatable</Badge>
+                        <Badge variant="outline" color="gray" fullWidth radius="sm">无尽 / 不可通关</Badge>
                     )}
 
                     <Group gap="xs" align="flex-end">
@@ -151,14 +151,14 @@ export function GameCard({ game }: GameCardProps) {
 
                     <Group justify="flex-end" gap="xs">
                         {/* Comment Trigger */}
-                        <Tooltip label="Edit Comment">
+                        <Tooltip label="写评价">
                             <ActionIcon variant={review?.comment ? 'filled' : 'light'} color="gray" onClick={open} size="sm">
                                 <IconMessageDots size={16} />
                             </ActionIcon>
                         </Tooltip>
 
                         {/* Exclude Trigger */}
-                        <Tooltip label="Exclude from Summary">
+                        <Tooltip label="从统计中排除">
                             <ActionIcon variant="light" color="red" onClick={() => handleUpdate({ excluded: true })} size="sm">
                                 <IconEyeOff size={16} />
                             </ActionIcon>

@@ -67,12 +67,12 @@ export function AddGameModal({ opened, onClose }: AddGameModalProps) {
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title="Add Game Manually" size="lg">
+        <Modal opened={opened} onClose={onClose} title="手动添加游戏" size="lg">
             <Stack>
                 {!selectedGame ? (
                     <>
                         <TextInput
-                            placeholder="Search game by name..."
+                            placeholder="搜索游戏名称..."
                             leftSection={<IconSearch size={16} />}
                             value={query}
                             onChange={(e) => setQuery(e.currentTarget.value)}
@@ -99,7 +99,7 @@ export function AddGameModal({ opened, onClose }: AddGameModalProps) {
                                         </Group>
                                     ))}
                                     {!loading && results.length === 0 && query.length > 2 && (
-                                        <Text c="dimmed" ta="center" mt="xl">No results found.</Text>
+                                        <Text c="dimmed" ta="center" mt="xl">未找到结果</Text>
                                     )}
                                 </Stack>
                             </ScrollArea>
@@ -109,7 +109,7 @@ export function AddGameModal({ opened, onClose }: AddGameModalProps) {
                     <>
                         <Group justify="space-between">
                             <Text fw={700} size="lg">{selectedGame.name}</Text>
-                            <Button variant="subtle" color="gray" onClick={() => setSelectedGame(null)}>Change Game</Button>
+                            <Button variant="subtle" color="gray" onClick={() => setSelectedGame(null)}>更换游戏</Button>
                         </Group>
 
                         <Center py="md">
@@ -123,8 +123,8 @@ export function AddGameModal({ opened, onClose }: AddGameModalProps) {
                         </Center>
 
                         <NumberInput
-                            label="Total Playtime (Hours)"
-                            description="Enter your estimated playtime in hours."
+                            label="总游玩时长 (小时)"
+                            description="输入您的预估游玩时长"
                             value={playtime}
                             onChange={setPlaytime}
                             min={0.1}
@@ -132,7 +132,7 @@ export function AddGameModal({ opened, onClose }: AddGameModalProps) {
                         />
 
                         <Button fullWidth onClick={handleAdd} size="md" mt="md">
-                            Add to Library
+                            添加至库中
                         </Button>
                     </>
                 )}
