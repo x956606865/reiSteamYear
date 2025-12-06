@@ -143,135 +143,149 @@ export function GameCard({ game }: GameCardProps) {
 
                     {/* Rating Section */}
                     <Stack gap={4} mt="xs">
-                        <Group justify="space-between">
-                            <Group gap={6}>
-                                <Text size="sm" c="dimmed">评分？</Text>
-                                <Switch
-                                    size="xs"
-                                    checked={!review?.noRating}
-                                    onChange={(e) => handleUpdate({ noRating: !e.currentTarget.checked })}
-                                />
-                            </Group>
+                        {(() => {
+                            const currentStatus = review?.status || 'played';
+                            // Default: Unfinished (played/dropped) games have rating disabled (noRating=true) by default.
+                            // Beaten games have rating enabled (noRating=false) by default.
+                            // Explicit user choice (review.noRating defined) overrides default.
+                            const effectiveNoRating = review?.noRating ?? (currentStatus !== 'beaten');
 
-                            {!review?.noRating && (
-                                <Text size="sm" fw={700}>
-                                    总分: {(() => {
-                                        const activeKeys = [
-                                            'ratingGameplay',
-                                            'ratingVisuals',
-                                            'ratingStory',
-                                            'ratingSubjective'
-                                        ].filter(k => !review?.skippedRatings?.includes(k));
+                            return (
+                                <>
+                                    <Group justify="space-between">
+                                        <Group gap={6}>
+                                            <Text size="sm" c="dimmed">评分？</Text>
+                                            <Switch
+                                                size="xs"
+                                                checked={!effectiveNoRating}
+                                                onChange={(e) => handleUpdate({ noRating: !e.currentTarget.checked })}
+                                            />
+                                        </Group>
 
-                                        if (activeKeys.length === 0) return 0;
+                                        {!effectiveNoRating && (
+                                            <Text size="sm" fw={700}>
+                                                总分: {(() => {
+                                                    const activeKeys = [
+                                                        'ratingGameplay',
+                                                        'ratingVisuals',
+                                                        'ratingStory',
+                                                        'ratingSubjective'
+                                                    ].filter(k => !review?.skippedRatings?.includes(k));
 
-                                        const sum = activeKeys.reduce((acc, key) => {
-                                            // @ts-ignore
-                                            return acc + (localRatings[key] ?? 0);
-                                        }, 0);
+                                                    if (activeKeys.length === 0) return 0;
 
-                                        return Math.round(sum / activeKeys.length);
-                                    })()}
-                                </Text>
-                            )}
-                            {review?.noRating && <Text size="xs" c="dimmed">未评分</Text>}
-                        </Group>
+                                                    const sum = activeKeys.reduce((acc, key) => {
+                                                        // @ts-ignore
+                                                        return acc + (localRatings[key] ?? 0);
+                                                    }, 0);
 
-                        {!review?.noRating && (
-                            [
-                                { label: '游戏性', key: 'ratingGameplay' as const },
-                                { label: '音画', key: 'ratingVisuals' as const },
-                                { label: '剧情', key: 'ratingStory' as const },
-                                { label: '主观', key: 'ratingSubjective' as const },
-                            ].map((item) => {
-                                const val = localRatings[item.key];
-                                const isSkipped = review?.skippedRatings?.includes(item.key);
-                                const canSkip = item.key !== 'ratingSubjective'; // Subjective is always active? Or user said "Gameplay, Visuals, Story" should have option.
-
-                                return (
-                                    <Group key={item.key} gap="xs" align="center">
-                                        <Text size="xs" w={45} c={isSkipped ? "dimmed" : undefined} td={isSkipped ? "line-through" : undefined}>
-                                            {item.label}
-                                        </Text>
-                                        <Slider
-                                            style={{ flex: 1, opacity: isSkipped ? 0.3 : 1 }}
-                                            size="xs"
-                                            color="yellow"
-                                            value={val}
-                                            min={0}
-                                            max={100}
-                                            label={null}
-                                            disabled={isSkipped}
-                                            onChange={(v) => {
-                                                setLocalRatings(prev => ({ ...prev, [item.key]: v }));
-                                            }}
-                                            onChangeEnd={(v) => {
-                                                const currentReview = reviews[game.appid] || {};
-                                                const updatedRatings = { ...localRatings, [item.key]: v };
-
-                                                // Helper to calc average
-                                                const skipped = currentReview.skippedRatings || [];
-                                                const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
-                                                const active = allKeys.filter(k => !skipped.includes(k));
-                                                // @ts-ignore
-                                                const sum = active.reduce((acc, k) => acc + updatedRatings[k], 0);
-                                                const avg = active.length ? Math.round(sum / active.length) : 0;
-
-                                                addReview(game.appid, {
-                                                    ...currentReview,
-                                                    ...updatedRatings,
-                                                    rating: avg,
-                                                    status: currentReview.status || 'played',
-                                                    isBeatable: currentReview.isBeatable ?? true,
-                                                    excluded: currentReview.excluded ?? false,
-                                                    noRating: currentReview.noRating ?? false
-                                                });
-                                            }}
-                                        />
-                                        <Text size="xs" w={28} ta="right" c={isSkipped ? "dimmed" : undefined}>
-                                            {isSkipped ? '-' : val}
-                                        </Text>
-
-                                        <ActionIcon
-                                            size="xs"
-                                            variant="subtle"
-                                            color="gray"
-                                            style={{ opacity: canSkip && !isSkipped ? 0.3 : (isSkipped ? 1 : 0), cursor: canSkip ? 'pointer' : 'default' }}
-                                            onClick={() => {
-                                                if (!canSkip) return;
-                                                const currentReview = reviews[game.appid] || {};
-                                                const currentSkipped = currentReview.skippedRatings || [];
-                                                const newSkipped = currentSkipped.includes(item.key)
-                                                    ? currentSkipped.filter(k => k !== item.key)
-                                                    : [...currentSkipped, item.key];
-
-                                                // Recalc average
-                                                const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
-                                                const active = allKeys.filter(k => !newSkipped.includes(k));
-                                                // Use current local ratings for calc
-                                                // @ts-ignore
-                                                const sum = active.reduce((acc, k) => acc + localRatings[k], 0);
-                                                const avg = active.length ? Math.round(sum / active.length) : 0;
-
-                                                addReview(game.appid, {
-                                                    ...currentReview,
-                                                    ...localRatings,
-                                                    skippedRatings: newSkipped,
-                                                    rating: avg,
-                                                    status: currentReview.status || 'played',
-                                                    isBeatable: currentReview.isBeatable ?? true,
-                                                    excluded: currentReview.excluded ?? false,
-                                                    noRating: currentReview.noRating ?? false
-                                                });
-                                            }}
-                                        >
-                                            <IconEyeOff size={12} />
-                                        </ActionIcon>
+                                                    return Math.round(sum / activeKeys.length);
+                                                })()}
+                                            </Text>
+                                        )}
+                                        {effectiveNoRating && <Text size="xs" c="dimmed">未评分</Text>}
                                     </Group>
-                                );
-                            })
-                        )}
+
+                                    {!effectiveNoRating && (
+                                        [
+                                            { label: '游戏性', key: 'ratingGameplay' as const },
+                                            { label: '音画', key: 'ratingVisuals' as const },
+                                            { label: '剧情', key: 'ratingStory' as const },
+                                            { label: '主观', key: 'ratingSubjective' as const },
+                                        ].map((item) => {
+                                            const val = localRatings[item.key];
+                                            const isSkipped = review?.skippedRatings?.includes(item.key);
+                                            const canSkip = item.key !== 'ratingSubjective';
+
+                                            return (
+                                                <Group key={item.key} gap="xs" align="center">
+                                                    <Text size="xs" w={45} c={isSkipped ? "dimmed" : undefined} td={isSkipped ? "line-through" : undefined}>
+                                                        {item.label}
+                                                    </Text>
+                                                    <Slider
+                                                        style={{ flex: 1, opacity: isSkipped ? 0.3 : 1 }}
+                                                        size="xs"
+                                                        color="yellow"
+                                                        value={val}
+                                                        min={0}
+                                                        max={100}
+                                                        label={null}
+                                                        disabled={isSkipped}
+                                                        onChange={(v) => {
+                                                            setLocalRatings(prev => ({ ...prev, [item.key]: v }));
+                                                        }}
+                                                        onChangeEnd={(v) => {
+                                                            const currentReview = reviews[game.appid] || {};
+                                                            const updatedRatings = { ...localRatings, [item.key]: v };
+
+                                                            // Helper to calc average
+                                                            const skipped = currentReview.skippedRatings || [];
+                                                            const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
+                                                            const active = allKeys.filter(k => !skipped.includes(k));
+                                                            // @ts-ignore
+                                                            const sum = active.reduce((acc, k) => acc + updatedRatings[k], 0);
+                                                            const avg = active.length ? Math.round(sum / active.length) : 0;
+
+                                                            addReview(game.appid, {
+                                                                ...currentReview,
+                                                                ...updatedRatings,
+                                                                rating: avg,
+                                                                status: currentReview.status || 'played',
+                                                                isBeatable: currentReview.isBeatable ?? true,
+                                                                excluded: currentReview.excluded ?? false,
+                                                                noRating: currentReview.noRating ?? false
+                                                            });
+                                                        }}
+                                                    />
+                                                    <Text size="xs" w={28} ta="right" c={isSkipped ? "dimmed" : undefined}>
+                                                        {isSkipped ? '-' : val}
+                                                    </Text>
+
+                                                    <ActionIcon
+                                                        size="xs"
+                                                        variant="subtle"
+                                                        color="gray"
+                                                        style={{ opacity: canSkip && !isSkipped ? 0.3 : (isSkipped ? 1 : 0), cursor: canSkip ? 'pointer' : 'default' }}
+                                                        onClick={() => {
+                                                            if (!canSkip) return;
+                                                            const currentReview = reviews[game.appid] || {};
+                                                            const currentSkipped = currentReview.skippedRatings || [];
+                                                            const newSkipped = currentSkipped.includes(item.key)
+                                                                ? currentSkipped.filter(k => k !== item.key)
+                                                                : [...currentSkipped, item.key];
+
+                                                            // Recalc average
+                                                            const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
+                                                            const active = allKeys.filter(k => !newSkipped.includes(k));
+                                                            // Use current local ratings for calc
+                                                            // @ts-ignore
+                                                            const sum = active.reduce((acc, k) => acc + localRatings[k], 0);
+                                                            const avg = active.length ? Math.round(sum / active.length) : 0;
+
+                                                            addReview(game.appid, {
+                                                                ...currentReview,
+                                                                ...localRatings,
+                                                                skippedRatings: newSkipped,
+                                                                rating: avg,
+                                                                status: currentReview.status || 'played',
+                                                                isBeatable: currentReview.isBeatable ?? true,
+                                                                excluded: currentReview.excluded ?? false,
+                                                                noRating: currentReview.noRating ?? false
+                                                            });
+                                                        }}
+                                                    >
+                                                        <IconEyeOff size={12} />
+                                                    </ActionIcon>
+                                                </Group>
+                                            );
+                                        })
+                                    )}
+                                </>
+                            );
+                        })()}
                     </Stack>
+
+
 
                     <Group justify="flex-end" gap="xs">
                         {/* Comment Trigger */}
