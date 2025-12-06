@@ -63,14 +63,14 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                 <Group grow>
                     <Card bg="dark.6" radius="md" p="md">
                         <Group justify="space-between">
-                            <Text fw={700}>Games Beaten</Text>
+                            <Text fw={700} c="white">Games Beaten</Text>
                             <Badge size="lg" color="green">{data.beatenCount}</Badge>
                         </Group>
                     </Card>
                     <Card bg="dark.6" radius="md" p="md">
                         <Group justify="space-between">
-                            <Text fw={700}>Dropped / Unfinished</Text>
-                            <Badge size="lg" color="red">{data.droppedCount}</Badge>
+                            <Text fw={700} c="white">Unfinished (Store)</Text>
+                            <Badge size="lg" color="gray">{data.droppedCount}</Badge>
                         </Group>
                     </Card>
                 </Group>

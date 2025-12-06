@@ -56,7 +56,7 @@ export default function SummaryPage() {
             }
 
             if (r) {
-                if (r.status === 'dropped') dropped++; // Dropped might still exist from old data
+                // if (r.status === 'dropped') dropped++; // Dropped might still exist from old data - REMOVED
                 if (r.status === 'played') played++;
                 if (r.rating > 0) {
                     ratedGames.push({ ...game, rating: r.rating });
@@ -83,9 +83,9 @@ export default function SummaryPage() {
             totalGames: games.length,
             totalPlaytime: totalPlaytime,
             beatenCount: beatenCount,
-            droppedCount: dropped,
+            droppedCount: beatableCount - beatenCount,
             playedCount: played,
-            completionRate, // New field
+            completionRate,
             topGames: ratedGames.slice(0, 3)
         };
     }, [gamesData, reviews, session]);
