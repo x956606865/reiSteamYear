@@ -4,12 +4,13 @@ import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import { useReviewStore } from "@/store/useReviewStore";
 import { SummaryCard } from "@/components/SummaryCard";
-import { Container, Button, Center, Loader, Alert, Stack, Group } from "@mantine/core";
-import { useRef, useMemo } from "react";
+import { ExportableGameList, ExportableGame } from "@/components/ExportableGameList";
+import { Container, Button, Center, Loader, Alert, Stack, Group, Tooltip, Box } from "@mantine/core";
+import { useRef, useMemo, useState } from "react";
 import { toPng } from "html-to-image";
 import download from "downloadjs";
 import { Header } from "@/components/Header";
-import { IconDownload } from "@tabler/icons-react";
+import { IconDownload, IconPhoto } from "@tabler/icons-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -18,6 +19,8 @@ export default function SummaryPage() {
     const { data: gamesData, isLoading } = useSWR(session ? '/api/games' : null, fetcher);
     const { reviews, manualGames } = useReviewStore();
     const cardRef = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
+    const [isExportingList, setIsExportingList] = useState(false);
 
     const summaryData = useMemo(() => {
         if (!gamesData?.games || !session?.user) return null;
@@ -36,7 +39,7 @@ export default function SummaryPage() {
 
         // Filter out excluded games
         const games = allGames.filter((g) => !reviews[g.appid]?.excluded);
-        const ratedGames = [];
+        const ratedGames: (ExportableGame & { [key: string]: any })[] = [];
 
         // Completion Stats
         let beatableCount = 0;
@@ -60,22 +63,24 @@ export default function SummaryPage() {
                 if (r.status === 'played') played++;
                 // Only include in ratedGames if it has a rating > 0 AND is not explicitly unrated
                 if (r.rating > 0 && !r.noRating) {
-                    ratedGames.push({ ...game, rating: r.rating });
+                    ratedGames.push({
+                        ...game,
+                        rating: r.rating,
+                        subRatings: {
+                            gameplay: r.ratingGameplay || r.rating,
+                            visuals: r.ratingVisuals || r.rating,
+                            story: r.ratingStory || r.rating,
+                            subjective: r.ratingSubjective || r.rating,
+                        },
+                        skippedRatings: r.skippedRatings
+                    });
                 }
-            } else {
-                // Default status assumption? 
-                // If they played it, count as played (unless logic differs).
-                // For now, only count explicit statuses for the counters, 
-                // OR count everything as 'played' if no status?
-                // Let's stick to explicit reviews for "Beaten"/"Dropped", 
-                // but "Total Games" covers everything.
             }
         }
 
         // Sort rated games
         ratedGames.sort((a, b) => b.rating - a.rating);
 
-        // Calculate Stats
         const totalPlaytime = games.reduce((acc, g) => acc + g.playtime_forever, 0);
         const completionRate = beatableCount > 0 ? Math.round((beatenCount / beatableCount) * 100) : 0;
 
@@ -87,7 +92,8 @@ export default function SummaryPage() {
             droppedCount: beatableCount - beatenCount,
             playedCount: played,
             completionRate,
-            topGames: ratedGames.slice(0, 3)
+            topGames: ratedGames.slice(0, 3) as any[],
+            allRatedGames: ratedGames
         };
     }, [gamesData, reviews, session]);
 
@@ -116,12 +122,38 @@ export default function SummaryPage() {
         }
     };
 
+    const handleListExport = async () => {
+        if (listRef.current) {
+            setIsExportingList(true);
+            // Wait for render ? Actually ref is always mounted but hidden
+            try {
+                // Need a small timeout to ensure any state updates/images load? (Usually ok if pre-rendered)
+
+                const dataUrl = await toPng(listRef.current, {
+                    cacheBust: true,
+                    backgroundColor: '#1A1B1E',
+                    pixelRatio: 2,
+                    skipOnError: true, // Ignore image loading errors
+                    style: {
+                        // When hidden, sometimes layout is weird. 
+                        // But we put it in an absolute container with valid size.
+                    }
+                });
+                download(dataUrl, 'steam-year-list.png');
+            } catch (err: any) {
+                console.error('List export failed detailed:', err);
+                if (err && err.target && err.target.tagName === 'IMG') {
+                    console.error('Failing image src:', err.target.src);
+                }
+                alert(`Failed to generate list image. Check console for details. Error: ${err?.message || 'Unknown'}`);
+            } finally {
+                setIsExportingList(false);
+            }
+        }
+    };
+
     const handleJsonExport = () => {
         if (!summaryData || !gamesData?.games) return;
-
-        // Re-construct the full game list logic here or reuse memo?
-        // Let's rely on the summaryData logic since we want to export the same dataset
-        // But we need the full game details + review data.
 
         const apiGames = gamesData.games as any[];
         const manualGamesList = Object.values(manualGames);
@@ -188,6 +220,16 @@ export default function SummaryPage() {
                             保存总结图片
                         </Button>
                         <Button
+                            rightSection={<IconPhoto size={16} />}
+                            size="lg"
+                            onClick={handleListExport}
+                            loading={isExportingList}
+                            variant="gradient"
+                            gradient={{ from: 'orange', to: 'red' }}
+                        >
+                            导出榜单长图
+                        </Button>
+                        <Button
                             rightSection={<IconDownload size={16} />}
                             size="lg"
                             onClick={handleJsonExport}
@@ -200,6 +242,16 @@ export default function SummaryPage() {
                     <SummaryCard ref={cardRef} data={summaryData} />
                 </Stack>
             </Container>
+
+            {/* Hidden Export Component - simplified hiding strategy */}
+            <div style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000, opacity: 0, pointerEvents: 'none' }}>
+                <ExportableGameList
+                    ref={listRef}
+                    user={summaryData.user}
+                    games={summaryData.allRatedGames}
+                    year={new Date().getFullYear()}
+                />
+            </div>
         </>
     );
 }

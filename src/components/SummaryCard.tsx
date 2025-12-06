@@ -28,12 +28,14 @@ interface SummaryCardProps {
     data: SummaryData;
 }
 
+const getProxyUrl = (url: string) => `/api/image-proxy?url=${encodeURIComponent(url)}`;
+
 export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data }, ref) => {
     return (
         <Card shadow="sm" padding="lg" radius="md" withBorder ref={ref} bg="#1A1B1E" style={{ maxWidth: 800, margin: '0 auto' }}>
             <Stack gap="xl">
                 <Group>
-                    <Avatar src={data.user.image} size="lg" radius="xl" />
+                    <Avatar src={getProxyUrl(data.user.image)} size="lg" radius="xl" />
                     <div>
                         <Text size="xl" fw={700} c="white" style={{ whiteSpace: 'nowrap' }}>{data.user.name} 的年度游戏报告</Text>
                         <Text size="sm" c="dimmed">Powered by Steam</Text>
@@ -84,7 +86,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                                 <Card key={game.appid} padding="sm" radius="md" bg="dark.6">
                                     <Card.Section>
                                         <Image
-                                            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
+                                            src={getProxyUrl(`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`)}
                                             height={100}
                                             fallbackSrc="https://placehold.co/600x400"
                                             alt={game.name}
