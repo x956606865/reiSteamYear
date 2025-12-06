@@ -11,7 +11,20 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const games = await getOwnedGames(session.user.steamId);
+        // Fetch both Chinese and English names in parallel
+        const [gamesCN, gamesEN] = await Promise.all([
+            getOwnedGames(session.user.steamId, 'schinese'),
+            getOwnedGames(session.user.steamId, 'english')
+        ]);
+
+        // Create a map for English names
+        const enNameMap = new Map(gamesEN.map(g => [g.appid, g.name]));
+
+        // Merge EN name into CN list
+        const games = gamesCN.map(g => ({
+            ...g,
+            name_en: enNameMap.get(g.appid) || g.name // Fallback to existing name if missing
+        }));
 
         // Filter games played in the last year (365 days)
         // rtime_last_played is unix timestamp (seconds)

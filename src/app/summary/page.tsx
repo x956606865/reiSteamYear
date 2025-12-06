@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import { useReviewStore } from "@/store/useReviewStore";
 import { SummaryCard } from "@/components/SummaryCard";
-import { Container, Button, Center, Loader, Alert, Stack } from "@mantine/core";
+import { Container, Button, Center, Loader, Alert, Stack, Group } from "@mantine/core";
 import { useRef, useMemo } from "react";
 import { toPng } from "html-to-image";
 import download from "downloadjs";
@@ -115,7 +115,54 @@ export default function SummaryPage() {
         }
     };
 
-    if (!session) return <Center h="100vh"><Header /><Alert>Please login</Alert></Center>;
+    const handleJsonExport = () => {
+        if (!summaryData || !gamesData?.games) return;
+
+        // Re-construct the full game list logic here or reuse memo?
+        // Let's rely on the summaryData logic since we want to export the same dataset
+        // But we need the full game details + review data.
+
+        const apiGames = gamesData.games as any[];
+        const manualGamesList = Object.values(manualGames);
+        const apiGameIds = new Set(apiGames.map(g => g.appid));
+        const uniqueManualGames = manualGamesList.filter(g => !apiGameIds.has(g.appid));
+        const allGames = [...apiGames, ...uniqueManualGames];
+
+        const exportData = {
+            generatedAt: new Date().toISOString(),
+            user: summaryData.user,
+            summary: {
+                totalGames: summaryData.totalGames,
+                totalPlaytimeHours: Math.round(summaryData.totalPlaytime / 60),
+                completionRate: summaryData.completionRate,
+                beatenCount: summaryData.beatenCount,
+                unfinishedBeatableCount: summaryData.droppedCount,
+            },
+            games: allGames.map(g => {
+                const r = reviews[g.appid];
+                return {
+                    appid: g.appid,
+                    name: g.name,
+                    originalName: g.name_en, // Added original English name
+                    playtimeMinutes: g.playtime_forever,
+                    review: r ? {
+                        rating: r.rating,
+                        status: r.status,
+                        comment: r.comment,
+                        isBeatable: r.isBeatable !== false, // Default true
+                        excluded: !!r.excluded
+                    } : null
+                };
+            })
+        };
+
+        const jsonString = JSON.stringify(exportData, null, 2);
+        // Create a Blob with explicit UTF-8 charset
+        const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+        download(blob, 'steam-year-data.json', "application/json;charset=utf-8");
+    };
+
+    if (!session) return <Center h="100vh"><Header /><Alert>请登录</Alert></Center>;
     if (isLoading || !summaryData) return <Center h="100vh"><Loader /></Center>;
 
     return (
@@ -123,15 +170,25 @@ export default function SummaryPage() {
             <Header />
             <Container size="lg" py="xl">
                 <Stack align="center" gap="xl">
-                    <Button
-                        rightSection={<IconDownload size={16} />}
-                        size="lg"
-                        onClick={handleExport}
-                        variant="gradient"
-                        gradient={{ from: 'indigo', to: 'cyan' }}
-                    >
-                        保存总结图片
-                    </Button>
+                    <Group>
+                        <Button
+                            rightSection={<IconDownload size={16} />}
+                            size="lg"
+                            onClick={handleExport}
+                            variant="gradient"
+                            gradient={{ from: 'indigo', to: 'cyan' }}
+                        >
+                            保存总结图片
+                        </Button>
+                        <Button
+                            rightSection={<IconDownload size={16} />}
+                            size="lg"
+                            onClick={handleJsonExport}
+                            variant="default"
+                        >
+                            导出数据 (JSON)
+                        </Button>
+                    </Group>
 
                     <SummaryCard ref={cardRef} data={summaryData} />
                 </Stack>
