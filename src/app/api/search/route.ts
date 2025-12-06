@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const term = searchParams.get('term');
@@ -13,6 +15,7 @@ export async function GET(req: NextRequest) {
         const data = await response.json();
 
         // Transform to lighter manual game format
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const items = data.items?.map((item: any) => ({
             id: item.id,
             name: item.name,
