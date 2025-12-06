@@ -35,7 +35,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, SummaryCardProps>(({ data 
                 <Group>
                     <Avatar src={data.user.image} size="lg" radius="xl" />
                     <div>
-                        <Text size="xl" fw={700} c="white">{data.user.name} 的年度游戏报告</Text>
+                        <Text size="xl" fw={700} c="white" style={{ whiteSpace: 'nowrap' }}>{data.user.name} 的年度游戏报告</Text>
                         <Text size="sm" c="dimmed">Powered by Steam</Text>
                     </div>
                     <IconTrophy size={48} color="gold" style={{ marginLeft: 'auto' }} />
