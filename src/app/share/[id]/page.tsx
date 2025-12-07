@@ -4,12 +4,13 @@ import { Title, Group, Button, Grid, Text, ActionIcon, Modal, TextInput, Stack, 
 import { useShareStore, ShareGame } from '@/store/useShareStore';
 import { ShareGameCard } from '@/components/ShareGameCard';
 import { ExportableShareList } from '@/components/ExportableShareList';
-import { IconPlus, IconDownload, IconArrowLeft, IconSearch } from '@tabler/icons-react';
+import { IconPlus, IconDownload, IconArrowLeft, IconSearch, IconLink } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
 import { useState, useRef, use } from 'react';
 import { toPng } from 'html-to-image';
 import download from 'downloadjs';
+import LZString from 'lz-string';
 
 // Reusing ManualGameSearch component logic would be ideal, but for now implementing a simpler search modal here or extracting if time permits.
 // Let's create a simple search function here for M4.
@@ -91,6 +92,24 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
         }
     };
 
+    const handleCopyLink = async () => {
+        if (list.games.length > 20) {
+            alert('为了保证链接长度可用，通过链接分享最多支持 20 个游戏。请减少游戏数量或使用图片导出功能。');
+            return;
+        }
+
+        try {
+            const jsonStr = JSON.stringify(list);
+            const compressed = LZString.compressToEncodedURIComponent(jsonStr);
+            const url = `${window.location.origin}/share/view?data=${compressed}`;
+            await navigator.clipboard.writeText(url);
+            alert('链接已复制！发送给朋友即可分享此列表。');
+        } catch (err) {
+            console.error('Copy failed', err);
+            alert('复制链接失败');
+        }
+    };
+
     return (
         <>
             <Group mb="lg">
@@ -113,6 +132,13 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
                         disabled={list.games.length === 0}
                     >
                         导出分享图
+                    </Button>
+                    <Button
+                        leftSection={<IconLink size={16} />}
+                        onClick={handleCopyLink}
+                        variant="default"
+                    >
+                        复制链接
                     </Button>
                 </Group>
             </Group>

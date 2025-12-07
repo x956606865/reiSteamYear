@@ -1,14 +1,15 @@
-import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button } from '@mantine/core';
+import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button, Progress } from '@mantine/core';
 import { useShareStore, ShareGame } from '@/store/useShareStore';
 import { IconTrash, IconExternalLink, IconEyeOff } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 
 interface ShareGameCardProps {
-    listId: string;
     game: ShareGame;
+    listId?: string; // Optional in read-only mode
+    readOnly?: boolean;
 }
 
-export function ShareGameCard({ listId, game }: ShareGameCardProps) {
+export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardProps) {
     const { updateGame, removeGame } = useShareStore();
 
     // Local state for reason text to avoid sluggish typing
@@ -34,12 +35,14 @@ export function ShareGameCard({ listId, game }: ShareGameCardProps) {
 
     // Sync reason only on blur to avoid too many writes
     const handleReasonBlur = () => {
+        if (readOnly || !listId) return;
         if (reason !== game.reason) {
             updateGame(listId, { id: game.id, reason });
         }
     };
 
     const handleDelete = () => {
+        if (readOnly || !listId) return;
         if (confirm(`确定要从列表中移除 "${game.name}" 吗？`)) {
             removeGame(listId, game.id);
         }
@@ -49,6 +52,8 @@ export function ShareGameCard({ listId, game }: ShareGameCardProps) {
 
     // Helper to calculate average and update store
     const handleRatingChangeEnd = (key: string, value: number) => {
+        if (readOnly || !listId) return;
+
         const updatedRatings = { ...localRatings, [key]: value };
 
         const skipped = game.skippedRatings || [];
@@ -66,6 +71,7 @@ export function ShareGameCard({ listId, game }: ShareGameCardProps) {
     };
 
     const toggleSkip = (key: string) => {
+        if (readOnly || !listId) return;
         if (key === 'ratingSubjective') return; // Subjective cannot be skipped (or logic choice)
 
         const currentSkipped = game.skippedRatings || [];
@@ -123,10 +129,10 @@ export function ShareGameCard({ listId, game }: ShareGameCardProps) {
 
                 {/* Multi-dimensional Sliders */}
                 {[
-                    { label: '游戏性', key: 'ratingGameplay' as const },
-                    { label: '音画', key: 'ratingVisuals' as const },
-                    { label: '剧情', key: 'ratingStory' as const },
-                    { label: '主观', key: 'ratingSubjective' as const },
+                    { label: '游戏性', key: 'ratingGameplay' as const, color: 'blue' },
+                    { label: '音画', key: 'ratingVisuals' as const, color: 'pink' },
+                    { label: '剧情', key: 'ratingStory' as const, color: 'cyan' },
+                    { label: '主观', key: 'ratingSubjective' as const, color: 'orange' },
                 ].map((item) => {
                     const val = localRatings[item.key];
                     const isSkipped = game.skippedRatings?.includes(item.key);
@@ -137,20 +143,32 @@ export function ShareGameCard({ listId, game }: ShareGameCardProps) {
                             <Text size="xs" w={45} c={isSkipped ? "dimmed" : undefined} td={isSkipped ? "line-through" : undefined}>
                                 {item.label}
                             </Text>
-                            <Slider
-                                style={{ flex: 1, opacity: isSkipped ? 0.3 : 1 }}
-                                size="xs"
-                                color="yellow" // Matching GameCard style
-                                value={val}
-                                min={0}
-                                max={100}
-                                label={null}
-                                disabled={isSkipped}
-                                onChange={(v) => {
-                                    setLocalRatings(prev => ({ ...prev, [item.key]: v }));
-                                }}
-                                onChangeEnd={(v) => handleRatingChangeEnd(item.key, v)}
-                            />
+
+                            {readOnly ? (
+                                <Progress
+                                    value={isSkipped ? 0 : val}
+                                    color={item.color}
+                                    size="sm"
+                                    radius="xl"
+                                    style={{ flex: 1, opacity: isSkipped ? 0.3 : 1 }}
+                                />
+                            ) : (
+                                <Slider
+                                    style={{ flex: 1, opacity: isSkipped ? 0.3 : 1 }}
+                                    size="xs"
+                                    color={item.color}
+                                    value={val}
+                                    min={0}
+                                    max={100}
+                                    label={null}
+                                    disabled={isSkipped}
+                                    onChange={(v) => {
+                                        setLocalRatings(prev => ({ ...prev, [item.key]: v }));
+                                    }}
+                                    onChangeEnd={(v) => handleRatingChangeEnd(item.key, v)}
+                                />
+                            )}
+
                             <Text size="xs" w={28} ta="right" c={isSkipped ? "dimmed" : undefined}>
                                 {isSkipped ? '-' : val}
                             </Text>
@@ -159,8 +177,9 @@ export function ShareGameCard({ listId, game }: ShareGameCardProps) {
                                 size="xs"
                                 variant="subtle"
                                 color="gray"
-                                style={{ opacity: canSkip && !isSkipped ? 0.3 : (isSkipped ? 1 : 0), cursor: canSkip ? 'pointer' : 'default' }}
-                                onClick={() => canSkip && toggleSkip(item.key)}
+                                style={{ opacity: canSkip && !isSkipped && !readOnly ? 0.3 : (isSkipped ? 1 : 0), cursor: canSkip && !readOnly ? 'pointer' : 'default' }}
+                                onClick={() => !readOnly && canSkip && toggleSkip(item.key)}
+                                disabled={readOnly}
                             >
                                 <IconEyeOff size={12} />
                             </ActionIcon>
@@ -169,24 +188,30 @@ export function ShareGameCard({ listId, game }: ShareGameCardProps) {
                 })}
 
                 <Textarea
-                    placeholder="写下你的安利理由..."
+                    placeholder={readOnly ? "无评价" : "写下你的安利理由..."}
                     label="推荐理由"
+                    description={!readOnly && `${reason.length}/300`}
+                    maxLength={300}
                     autosize
                     minRows={3}
                     maxRows={6}
                     value={reason}
+                    readOnly={readOnly}
+                    variant={readOnly ? "filled" : "default"}
                     onChange={(e) => setReason(e.currentTarget.value)}
                     onBlur={handleReasonBlur}
                     mt="xs"
                 />
 
-                <Group justify="flex-end" mt="xs">
-                    <Tooltip label="移除游戏">
-                        <ActionIcon variant="light" color="red" onClick={handleDelete} size="sm">
-                            <IconTrash size={16} />
-                        </ActionIcon>
-                    </Tooltip>
-                </Group>
+                {!readOnly && (
+                    <Group justify="flex-end" mt="xs">
+                        <Tooltip label="移除游戏">
+                            <ActionIcon variant="light" color="red" onClick={handleDelete} size="sm">
+                                <IconTrash size={16} />
+                            </ActionIcon>
+                        </Tooltip>
+                    </Group>
+                )}
             </Stack>
         </Card>
     );

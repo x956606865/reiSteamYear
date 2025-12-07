@@ -30,12 +30,24 @@ interface ShareStore {
     addGame: (listId: string, game: ShareGame) => void;
     removeGame: (listId: string, gameId: number) => void;
     updateGame: (listId: string, game: Partial<ShareGame> & { id: number }) => void;
+    importList: (list: ShareList) => void;
 }
 
 export const useShareStore = create<ShareStore>()(
     persist(
         (set) => ({
             lists: [],
+            importList: (importedList) =>
+                set((state) => ({
+                    lists: [
+                        ...state.lists,
+                        {
+                            ...importedList,
+                            id: uuidv4(), // Regenerate ID to avoid collisions
+                            createdAt: Date.now()
+                        }
+                    ]
+                })),
             createList: (title) =>
                 set((state) => ({
                     lists: [
