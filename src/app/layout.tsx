@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { ColorSchemeScript, MantineProvider, Container } from '@mantine/core';
 import { Providers } from '@/components/Providers';
 import '@mantine/core/styles.css';
+import { Navbar } from "@/components/Navbar";
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,13 +21,15 @@ export default function RootLayout({
         <ColorSchemeScript />
       </head>
       <body>
-        <MantineProvider>
+        <MantineProvider defaultColorScheme="dark">
           <Providers>
-            {children}
+            <Navbar />
+            <Container size="md" py="xl">
+              {children}
+            </Container>
           </Providers>
         </MantineProvider>
       </body>
     </html>
   );
 }
-
