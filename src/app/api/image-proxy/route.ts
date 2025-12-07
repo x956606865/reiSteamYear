@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
         const response = await fetch(decodedUrl, {
             headers: {
@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error('Proxy error:', error);
         // Return a fallback placeholder image on error to prevent canvas export failure
-        // 1x1 Transparent PNG (Valid)
-        const base64Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+        // 1x1 Transparent PNG
+        const base64Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
         const buffer = Buffer.from(base64Png, 'base64');
 
         return new NextResponse(buffer, {

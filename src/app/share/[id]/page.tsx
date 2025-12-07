@@ -11,6 +11,7 @@ import { useState, useRef, use } from 'react';
 import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import LZString from 'lz-string';
+import { encodeShareList } from '@/utils/shareData';
 
 // Reusing ManualGameSearch component logic would be ideal, but for now implementing a simpler search modal here or extracting if time permits.
 // Let's create a simple search function here for M4.
@@ -27,6 +28,7 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [shortUrl, setShortUrl] = useState<string | undefined>(undefined);
 
     const exportRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +40,32 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
             </Stack>
         );
     }
+
+    const getShortLink = async () => {
+        // Reuse existing shortUrl if available to save API calls
+        if (shortUrl) return shortUrl;
+
+        const compressed = encodeShareList(list);
+
+        try {
+            const res = await fetch('/api/shorten', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: compressed })
+            });
+
+            if (!res.ok) throw new Error('Shorten failed');
+
+            const { code } = await res.json();
+            const url = `${window.location.origin}/s/${code}`;
+            setShortUrl(url);
+            return url;
+        } catch (e) {
+            console.error(e);
+            // Fallback to long URL
+            return `${window.location.origin}/share/view?data=${compressed}`;
+        }
+    };
 
     const handleSearch = async () => {
         if (!searchTerm.trim()) return;
@@ -73,6 +101,12 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
         if (!exportRef.current) return;
         setExporting(true);
         try {
+            // Ensure short link is generated for the QR code
+            await getShortLink();
+
+            // Give React a moment to update the ExportableShareList prop
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             // Unhide temporarily if strictly needed, but here we can render it off-screen or in a hidden div
             // Actually, best practice is to render it visible but absolute positioned off-screen, or z-index behind.
             // For simplicity in this iteration, we use a hidden visible container trick if needed,
@@ -93,15 +127,8 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
     };
 
     const handleCopyLink = async () => {
-        if (list.games.length > 20) {
-            alert('为了保证链接长度可用，通过链接分享最多支持 20 个游戏。请减少游戏数量或使用图片导出功能。');
-            return;
-        }
-
         try {
-            const jsonStr = JSON.stringify(list);
-            const compressed = LZString.compressToEncodedURIComponent(jsonStr);
-            const url = `${window.location.origin}/share/view?data=${compressed}`;
+            const url = await getShortLink();
             await navigator.clipboard.writeText(url);
             alert('链接已复制！发送给朋友即可分享此列表。');
         } catch (err) {
@@ -159,7 +186,7 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
 
             {/* Hidden Export Component - Rendered behind content but visible to DOM for capturing */}
             <div style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000, opacity: 0 }}>
-                <ExportableShareList ref={exportRef} list={list} />
+                <ExportableShareList ref={exportRef} list={list} shareUrl={shortUrl} />
             </div>
 
             {/* Search Modal */}

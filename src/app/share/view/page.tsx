@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import LZString from 'lz-string';
 import { ShareList, useShareStore } from '@/store/useShareStore';
+import { decodeShareList } from '@/utils/shareData';
 import { Container, Title, Text, Stack, Button, Group, Grid, Alert, Loader, Card } from '@mantine/core';
 import { ShareGameCard } from '@/components/ShareGameCard';
 import { IconDeviceFloppy, IconArrowLeft, IconAlertCircle } from '@tabler/icons-react';
@@ -22,23 +23,12 @@ function ShareViewContent() {
             return;
         }
 
-        try {
-            const jsonStr = LZString.decompressFromEncodedURIComponent(dataParam);
-            if (!jsonStr) {
-                setError('链接无效：无法解析数据');
-                return;
-            }
-            const parsedList = JSON.parse(jsonStr) as ShareList;
-
-            // Basic validation
-            if (!parsedList.title || !Array.isArray(parsedList.games)) {
-                throw new Error('数据格式错误');
-            }
-            setList(parsedList);
-        } catch (err) {
-            console.error(err);
-            setError('链接已损坏或格式错误');
+        const parsedList = decodeShareList(dataParam);
+        if (!parsedList || !parsedList.title || !Array.isArray(parsedList.games)) {
+            setError('链接无效或数据格式错误');
+            return;
         }
+        setList(parsedList);
     }, [dataParam]);
 
     const handleImport = () => {
