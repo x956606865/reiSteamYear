@@ -1,5 +1,5 @@
 import { Box, Title, Text, SimpleGrid, Card, Image, Group, Stack, Badge, Grid, Progress } from '@mantine/core';
-import { IconStarFilled } from '@tabler/icons-react';
+import { IconStarFilled, IconTrophy } from '@tabler/icons-react';
 import { ShareList } from '@/store/useShareStore';
 import { forwardRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -40,100 +40,149 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
             </Grid>
 
             <Stack gap="xl">
-                {[...list.games].sort((a, b) => b.rating - a.rating).map((game, index) => (
-                    <Card key={game.id} radius="lg" bg="dark.6" p="lg" withBorder style={{ borderColor: '#2C2E33' }}>
-                        <Grid align="flex-start" gutter="xl">
-                            {/* Game Info */}
-                            <Grid.Col span={4}>
-                                <Group wrap="nowrap" align="flex-start">
-                                    <Text size="xl" fw={900} c="dimmed" w={40} ta="center" style={{ opacity: 0.3, marginTop: 4 }}>#{index + 1}</Text>
-                                    <Stack gap="xs">
-                                        <img
-                                            src={`/api/image-proxy?url=${encodeURIComponent(game.coverUrl)}&gid=${game.id}`}
-                                            style={{
-                                                width: 200,
-                                                height: 94,
-                                                borderRadius: 8,
-                                                objectFit: 'cover'
-                                            }}
-                                            alt={game.name}
-                                            crossOrigin="anonymous"
-                                        />
-                                        <Title order={3} c="white" lineClamp={2} style={{ fontSize: 20 }}>
-                                            {game.name}
-                                        </Title>
-                                    </Stack>
-                                </Group>
-                            </Grid.Col>
+                {[...list.games].sort((a, b) => b.rating - a.rating).map((game, index) => {
+                    const isHighRank = list.games.length > 3 && index < 3;
+                    const rankColors = ['#FFD700', '#E0E0E0', '#CD7F32']; // Gold, Silver, Bronze
+                    const rankColor = isHighRank ? rankColors[index] : undefined;
 
-                            {/* Sub Ratings */}
-                            <Grid.Col span={4}>
-                                <Stack gap={4}>
-                                    <Group justify="space-between" mb={4}>
-                                        <Group gap={6} align="center">
-                                            <IconStarFilled size={18} color="gold" />
-                                            <Text fw={900} size="lg" c="white">TOTAL SCORE</Text>
-                                        </Group>
-                                        <Badge size="lg" variant="filled" color={game.rating >= 90 ? 'yellow' : 'blue'}>
-                                            {game.rating}
-                                        </Badge>
+                    return (
+                        <Card
+                            key={game.id}
+                            radius="lg"
+                            bg="dark.6"
+                            p="lg"
+                            withBorder
+                            style={{
+                                borderColor: rankColor || '#2C2E33',
+                                borderWidth: isHighRank ? 2 : 1,
+                                position: 'relative',
+                                overflow: 'visible' // Allow badge to pop out if we wanted, but keeping inside for now
+                            }}
+                        >
+                            {/* Rank Glow for Top 3 */}
+                            {isHighRank && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, bottom: 0, width: 4,
+                                    background: rankColor,
+                                    borderTopLeftRadius: 16,
+                                    borderBottomLeftRadius: 16
+                                }} />
+                            )}
+
+                            <Grid align="flex-start" gutter="xl">
+                                {/* Game Info */}
+                                <Grid.Col span={4}>
+                                    <Group wrap="nowrap" align="flex-start">
+                                        <Stack align="center" gap={4} w={40} mt={4}>
+                                            {isHighRank ? (
+                                                <>
+                                                    <IconTrophy size={24} color={rankColor} style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))' }} />
+                                                    <Text size="xl" fw={900} c={rankColor} style={{ lineHeight: 1 }}>#{index + 1}</Text>
+                                                </>
+                                            ) : (
+                                                <Text size="xl" fw={900} c="dimmed" style={{ opacity: 0.3 }}>#{index + 1}</Text>
+                                            )}
+                                        </Stack>
+
+                                        <Stack gap="xs">
+                                            <img
+                                                src={`/api/image-proxy?url=${encodeURIComponent(game.coverUrl)}&gid=${game.id}`}
+                                                style={{
+                                                    width: 200,
+                                                    height: 94,
+                                                    borderRadius: 8,
+                                                    objectFit: 'cover',
+                                                    border: isHighRank ? `1px solid ${rankColor}` : 'none'
+                                                }}
+                                                alt={game.name}
+                                                crossOrigin="anonymous"
+                                            />
+                                            <Title order={3} c={isHighRank ? "white" : "gray.3"} lineClamp={2} style={{ fontSize: 20 }}>
+                                                {game.name}
+                                            </Title>
+                                        </Stack>
                                     </Group>
+                                </Grid.Col>
 
-                                    <Grid gutter="xs">
-                                        {[
-                                            { label: '玩法', key: 'ratingGameplay', color: 'blue' },
-                                            { label: '画面', key: 'ratingVisuals', color: 'pink' },
-                                            { label: '剧情', key: 'ratingStory', color: 'cyan' },
-                                            { label: '私心', key: 'ratingSubjective', color: 'orange' },
-                                        ].map((item) => {
-                                            // @ts-ignore
-                                            // Fallback to total rating if individual rating is not set (same behavior as GameCard)
-                                            const val = game[item.key] ?? game.rating ?? 80;
-                                            // @ts-ignore
-                                            const isSkipped = game.skippedRatings?.includes(item.key);
+                                {/* Sub Ratings */}
+                                <Grid.Col span={4}>
+                                    <Stack gap={4}>
+                                        <Group justify="space-between" mb={4}>
+                                            <Group gap={6} align="center">
+                                                <IconStarFilled size={18} color={isHighRank ? rankColor : "gold"} />
+                                                <Text fw={900} size="lg" c={isHighRank ? rankColor : "white"}>TOTAL SCORE</Text>
+                                            </Group>
+                                            <Badge
+                                                size="lg"
+                                                variant={isHighRank ? "gradient" : "filled"}
+                                                gradient={isHighRank ? { from: rankColor!, to: 'orange', deg: 45 } : undefined}
+                                                color={!isHighRank ? (game.rating >= 90 ? 'yellow' : 'blue') : undefined}
+                                                style={{
+                                                    color: isHighRank ? '#000' : undefined, // Black text on bright metals
+                                                    border: isHighRank ? `1px solid ${rankColor}` : 'none'
+                                                }}
+                                            >
+                                                {game.rating}
+                                            </Badge>
+                                        </Group>
 
-                                            if (isSkipped) return null;
+                                        <Grid gutter="xs">
+                                            {[
+                                                { label: '玩法', key: 'ratingGameplay', color: 'blue' },
+                                                { label: '画面', key: 'ratingVisuals', color: 'pink' },
+                                                { label: '剧情', key: 'ratingStory', color: 'cyan' },
+                                                { label: '私心', key: 'ratingSubjective', color: 'orange' },
+                                            ].map((item) => {
+                                                // @ts-ignore
+                                                // Fallback to total rating if individual rating is not set (same behavior as GameCard)
+                                                const val = game[item.key] ?? game.rating ?? 80;
+                                                // @ts-ignore
+                                                const isSkipped = game.skippedRatings?.includes(item.key);
 
-                                            return (
-                                                <Grid.Col span={12} key={item.key}>
-                                                    <Group gap={8} align="center" wrap="nowrap">
-                                                        <Text size="xs" c="dimmed" w={32}>{item.label}</Text>
-                                                        <Progress
-                                                            value={val}
-                                                            color={item.color}
-                                                            size="sm"
-                                                            radius="xl"
-                                                            style={{ flex: 1 }}
-                                                        />
-                                                        <Text size="xs" w={24} ta="right" fw={700} c="white">{val}</Text>
-                                                    </Group>
-                                                </Grid.Col>
-                                            )
-                                        })}
-                                    </Grid>
-                                </Stack>
-                            </Grid.Col>
+                                                if (isSkipped) return null;
 
-                            {/* Comment */}
-                            <Grid.Col span={4}>
-                                <Text size="xs" fw={700} c="dimmed" mb={8} tt="uppercase">Recommendation</Text>
-                                <Text
-                                    size="sm"
-                                    c="white"
-                                    style={{
-                                        whiteSpace: 'pre-wrap',
-                                        lineHeight: 1.6,
-                                        backgroundColor: 'rgba(0,0,0,0.2)',
-                                        padding: 12,
-                                        borderRadius: 8
-                                    }}
-                                >
-                                    {game.reason || '无推荐语'}
-                                </Text>
-                            </Grid.Col>
-                        </Grid>
-                    </Card>
-                ))}
+                                                return (
+                                                    <Grid.Col span={12} key={item.key}>
+                                                        <Group gap={8} align="center" wrap="nowrap">
+                                                            <Text size="xs" c="dimmed" w={32}>{item.label}</Text>
+                                                            <Progress
+                                                                value={val}
+                                                                color={item.color}
+                                                                size="sm"
+                                                                radius="xl"
+                                                                style={{ flex: 1 }}
+                                                            />
+                                                            <Text size="xs" w={24} ta="right" fw={700} c="white">{val}</Text>
+                                                        </Group>
+                                                    </Grid.Col>
+                                                )
+                                            })}
+                                        </Grid>
+                                    </Stack>
+                                </Grid.Col>
+
+                                {/* Comment */}
+                                <Grid.Col span={4}>
+                                    <Text size="xs" fw={700} c="dimmed" mb={8} tt="uppercase">Recommendation</Text>
+                                    <Text
+                                        size="sm"
+                                        c="white"
+                                        style={{
+                                            whiteSpace: 'pre-wrap',
+                                            lineHeight: 1.6,
+                                            backgroundColor: 'rgba(0,0,0,0.2)',
+                                            padding: 12,
+                                            borderRadius: 8
+                                        }}
+                                    >
+                                        {game.reason || '无推荐语'}
+                                    </Text>
+                                </Grid.Col>
+                            </Grid>
+                        </Card>
+                    );
+                })}
             </Stack>
 
             {/* Footer with QR Code */}
