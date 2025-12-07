@@ -11,10 +11,30 @@ export async function GET(request: NextRequest) {
     try {
         const decodedUrl = decodeURIComponent(url);
 
-        // Basic security check - mainly to prevent proxying local network or sensitive endpoints if needed.
-        // For now, we allow http/https.
-        if (!decodedUrl.startsWith('http')) {
-            return new NextResponse('Invalid URL', { status: 400 });
+        // ALLOWED DOMAINS
+        const ALLOWED_DOMAINS = [
+            'steamcdn-a.akamaihd.net',
+            'shared.akamai.steamstatic.com',
+            'cdn.cloudflare.steamstatic.com',
+            'avatars.steamstatic.com',
+            'avatars.akamai.steamstatic.com',
+            'cdn.akamai.steamstatic.com'
+        ];
+
+        let parsedUrl: URL;
+        try {
+            parsedUrl = new URL(decodedUrl);
+        } catch {
+            return new NextResponse('Invalid URL format', { status: 400 });
+        }
+
+        if (!ALLOWED_DOMAINS.includes(parsedUrl.hostname)) {
+            return new NextResponse('Domain not allowed', { status: 400 });
+        }
+
+        // Final check to ensure protocol is http/s (though URL constructor defaults usually imply this if hostname parse works, it's good to be explicit)
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return new NextResponse('Invalid protocol', { status: 400 });
         }
 
         const controller = new AbortController();
