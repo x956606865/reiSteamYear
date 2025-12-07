@@ -87,7 +87,8 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                             { label: '私心', key: 'ratingSubjective', color: 'orange' },
                                         ].map((item) => {
                                             // @ts-ignore
-                                            const val = game[item.key] || 0;
+                                            // Fallback to total rating if individual rating is not set (same behavior as GameCard)
+                                            const val = game[item.key] ?? game.rating ?? 80;
                                             // @ts-ignore
                                             const isSkipped = game.skippedRatings?.includes(item.key);
 

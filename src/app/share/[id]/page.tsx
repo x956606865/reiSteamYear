@@ -7,7 +7,7 @@ import { ExportableShareList } from '@/components/ExportableShareList';
 import { IconPlus, IconDownload, IconArrowLeft, IconSearch, IconLink } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
-import { useState, useRef, use } from 'react';
+import { useState, useRef, use, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import LZString from 'lz-string';
@@ -28,9 +28,15 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [copying, setCopying] = useState(false);
     const [shortUrl, setShortUrl] = useState<string | undefined>(undefined);
 
     const exportRef = useRef<HTMLDivElement>(null);
+
+    // Reset shortUrl when list changes ensuring we always share the latest snapshot
+    useEffect(() => {
+        setShortUrl(undefined);
+    }, [list]);
 
     if (!list) {
         return (
@@ -127,6 +133,7 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
     };
 
     const handleCopyLink = async () => {
+        setCopying(true);
         try {
             const url = await getShortLink();
             await navigator.clipboard.writeText(url);
@@ -134,6 +141,8 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
         } catch (err) {
             console.error('Copy failed', err);
             alert('复制链接失败');
+        } finally {
+            setCopying(false);
         }
     };
 
@@ -164,6 +173,7 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
                         leftSection={<IconLink size={16} />}
                         onClick={handleCopyLink}
                         variant="default"
+                        loading={copying}
                     >
                         复制链接
                     </Button>
