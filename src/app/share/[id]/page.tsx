@@ -79,7 +79,6 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
 
             // Wait for images to load? The proxy should help.
             const dataUrl = await toPng(exportRef.current, {
-                cacheBust: true,
                 pixelRatio: 2,
                 backgroundColor: '#1A1B1E'
             });
@@ -125,7 +124,7 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
             ) : (
                 <Grid>
                     {list.games.map((game) => (
-                        <Grid.Col key={game.id} span={{ base: 12, md: 6 }}>
+                        <Grid.Col key={game.id} span={{ base: 12, md: 6, lg: 4, xl: 3 }}>
                             <ShareGameCard listId={list.id} game={game} />
                         </Grid.Col>
                     ))}

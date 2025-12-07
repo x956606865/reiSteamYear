@@ -24,7 +24,7 @@ export default function RootLayout({
         <MantineProvider defaultColorScheme="dark">
           <Providers>
             <Navbar />
-            <Container size="md" py="xl">
+            <Container size="xl" py="xl">
               {children}
             </Container>
           </Providers>

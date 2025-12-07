@@ -6,7 +6,12 @@ export interface ShareGame {
     id: number;
     name: string;
     coverUrl: string;
-    rating: number; // 0-100
+    rating: number; // 0-100 (Final calculated average)
+    ratingGameplay?: number;
+    ratingVisuals?: number;
+    ratingStory?: number;
+    ratingSubjective?: number;
+    skippedRatings?: string[];
     reason?: string; // Recommendation reason
 }
 

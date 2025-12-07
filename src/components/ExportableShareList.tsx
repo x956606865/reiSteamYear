@@ -1,4 +1,5 @@
-import { Box, Title, Text, SimpleGrid, Card, Image, Group, Stack, Badge } from '@mantine/core';
+import { Box, Title, Text, SimpleGrid, Card, Image, Group, Stack, Badge, Grid, Progress } from '@mantine/core';
+import { IconStarFilled } from '@tabler/icons-react';
 import { ShareList } from '@/store/useShareStore';
 import { forwardRef } from 'react';
 
@@ -18,47 +19,117 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                 // font-family?
             }}
         >
-            <Stack mb={40} align="center">
-                <Title order={1} style={{ fontSize: 48, fontWeight: 900 }}>{list.title}</Title>
-                <Text size="xl" c="dimmed">
-                    共 {list.games.length} 款游戏推荐
-                </Text>
+            {/* Header */}
+            <Stack mb={60} align="center" gap={0}>
+                <Title c="white" order={1} style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{list.title}</Title>
+                <Text size="xl" c="dimmed" mt="xs">安利列表 • 共 {list.games.length} 款游戏</Text>
             </Stack>
 
-            <SimpleGrid cols={2} spacing="xl">
-                {list.games.map((game, index) => (
-                    <Card key={game.id} radius="md" padding="lg" style={{ backgroundColor: '#25262B', display: 'flex', flexDirection: 'row', gap: 20 }}>
-                        <Image
-                            src={`/api/image-proxy?url=${encodeURIComponent(game.coverUrl)}`}
-                            w={180}
-                            h={270} // 2:3 ratio approx for cover
-                            radius="sm"
-                            fit="cover"
-                            alt={game.name}
-                        />
-                        <Stack style={{ flex: 1 }} justify="space-between">
-                            <Box>
-                                <Group justify="space-between" align="flex-start" mb="xs">
-                                    <Title order={3} lineClamp={2} style={{ flex: 1 }}>{game.name}</Title>
-                                    <Badge size="xl" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
-                                        {game.rating}
-                                    </Badge>
-                                </Group>
-                            </Box>
+            {/* List Header */}
+            <Grid mb="md" px="md" visibleFrom="xs">
+                <Grid.Col span={4}><Text size="sm" fw={700} c="dimmed">GAME</Text></Grid.Col>
+                <Grid.Col span={4}><Text size="sm" fw={700} c="dimmed">RATINGS</Text></Grid.Col>
+                <Grid.Col span={4}><Text size="sm" fw={700} c="dimmed">COMMENT</Text></Grid.Col>
+            </Grid>
 
-                            <Box style={{ flex: 1 }}>
-                                <Text size="sm" fw={700} c="dimmed" mb={4}>推荐理由：</Text>
-                                <Text lineClamp={6} style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                                    {game.reason || '这位作者很懒，什么也没写...'}
+            <Stack gap="xl">
+                {[...list.games].sort((a, b) => b.rating - a.rating).map((game, index) => (
+                    <Card key={game.id} radius="lg" bg="dark.6" p="lg" withBorder style={{ borderColor: '#2C2E33' }}>
+                        <Grid align="flex-start" gutter="xl">
+                            {/* Game Info */}
+                            <Grid.Col span={4}>
+                                <Group wrap="nowrap" align="flex-start">
+                                    <Text size="xl" fw={900} c="dimmed" w={40} ta="center" style={{ opacity: 0.3, marginTop: 4 }}>#{index + 1}</Text>
+                                    <Stack gap="xs">
+                                        <img
+                                            src={`/api/image-proxy?url=${encodeURIComponent(game.coverUrl)}&gid=${game.id}`}
+                                            style={{
+                                                width: 200,
+                                                height: 94,
+                                                borderRadius: 8,
+                                                objectFit: 'cover'
+                                            }}
+                                            alt={game.name}
+                                            crossOrigin="anonymous"
+                                        />
+                                        <Title order={3} c="white" lineClamp={2} style={{ fontSize: 20 }}>
+                                            {game.name}
+                                        </Title>
+                                    </Stack>
+                                </Group>
+                            </Grid.Col>
+
+                            {/* Sub Ratings */}
+                            <Grid.Col span={4}>
+                                <Stack gap={4}>
+                                    <Group justify="space-between" mb={4}>
+                                        <Group gap={6} align="center">
+                                            <IconStarFilled size={18} color="gold" />
+                                            <Text fw={900} size="lg" c="white">TOTAL SCORE</Text>
+                                        </Group>
+                                        <Badge size="lg" variant="filled" color={game.rating >= 90 ? 'yellow' : 'blue'}>
+                                            {game.rating}
+                                        </Badge>
+                                    </Group>
+
+                                    <Grid gutter="xs">
+                                        {[
+                                            { label: '玩法', key: 'ratingGameplay', color: 'blue' },
+                                            { label: '画面', key: 'ratingVisuals', color: 'pink' },
+                                            { label: '剧情', key: 'ratingStory', color: 'cyan' },
+                                            { label: '私心', key: 'ratingSubjective', color: 'orange' },
+                                        ].map((item) => {
+                                            // @ts-ignore
+                                            const val = game[item.key] || 0;
+                                            // @ts-ignore
+                                            const isSkipped = game.skippedRatings?.includes(item.key);
+
+                                            if (isSkipped) return null;
+
+                                            return (
+                                                <Grid.Col span={12} key={item.key}>
+                                                    <Group gap={8} align="center" wrap="nowrap">
+                                                        <Text size="xs" c="dimmed" w={32}>{item.label}</Text>
+                                                        <Progress
+                                                            value={val}
+                                                            color={item.color}
+                                                            size="sm"
+                                                            radius="xl"
+                                                            style={{ flex: 1 }}
+                                                        />
+                                                        <Text size="xs" w={24} ta="right" fw={700} c="white">{val}</Text>
+                                                    </Group>
+                                                </Grid.Col>
+                                            )
+                                        })}
+                                    </Grid>
+                                </Stack>
+                            </Grid.Col>
+
+                            {/* Comment */}
+                            <Grid.Col span={4}>
+                                <Text size="xs" fw={700} c="dimmed" mb={8} tt="uppercase">Recommendation</Text>
+                                <Text
+                                    size="sm"
+                                    c="white"
+                                    style={{
+                                        whiteSpace: 'pre-wrap',
+                                        lineHeight: 1.6,
+                                        backgroundColor: 'rgba(0,0,0,0.2)',
+                                        padding: 12,
+                                        borderRadius: 8
+                                    }}
+                                >
+                                    {game.reason || '无推荐语'}
                                 </Text>
-                            </Box>
-                        </Stack>
+                            </Grid.Col>
+                        </Grid>
                     </Card>
                 ))}
-            </SimpleGrid>
+            </Stack>
 
-            <Group justify="center" mt={60}>
-                <Text c="dimmed" size="lg">Created with ReiSteamYear</Text>
+            <Group justify="center" mt={80}>
+                <Text c="dimmed" size="lg">Generated by Rei Steam Year</Text>
             </Group>
         </Box>
     );
