@@ -1,4 +1,4 @@
-import { Card, Image, Text, Group, Badge, Stack, Title, Box, Grid, Progress, Avatar } from '@mantine/core';
+import { Card, Image, Text, Group, Badge, Stack, Title, Box, Grid, Progress, Avatar, Divider } from '@mantine/core';
 import { IconStarFilled, IconQuote } from '@tabler/icons-react';
 import { forwardRef } from 'react';
 import { getAttributeColor, getAttributeLabel } from '@/lib/constants';
@@ -110,23 +110,26 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
 
             {/* Manga Tags */}
             {listType === 'manga' && game.tags && (
-                <Grid gutter="xs">
-                    {Object.entries(game.tags).map(([key, value]) => (
-                        <Grid.Col span={6} key={key}>
-                            <Group gap={8} align="center" wrap="nowrap">
-                                <Text size="sm" c="dimmed" w={48} lineClamp={1}>{getAttributeLabel(key)}</Text>
-                                <Progress
-                                    value={value * 10} // Convert 0-10 to 0-100
-                                    color={getAttributeColor(key)}
-                                    size="sm"
-                                    radius="xl"
-                                    style={{ flex: 1 }}
-                                />
-                                <Text size="sm" w={28} ta="right" fw={700} c="white">{value}</Text>
-                            </Group>
-                        </Grid.Col>
-                    ))}
-                </Grid>
+                <>
+                    <Divider my="sm" color="white" style={{ opacity: 0.1 }} />
+                    <Grid gutter="xs">
+                        {Object.entries(game.tags).map(([key, value]) => (
+                            <Grid.Col span={6} key={key}>
+                                <Group gap={8} align="center" wrap="nowrap">
+                                    <Text size="sm" c="dimmed" w={48} lineClamp={1}>{getAttributeLabel(key)}</Text>
+                                    <Progress
+                                        value={value * 10} // Convert 0-10 to 0-100
+                                        color={getAttributeColor(key)}
+                                        size="sm"
+                                        radius="xl"
+                                        style={{ flex: 1 }}
+                                    />
+                                    <Text size="sm" w={28} ta="right" fw={700} c="white">{value}</Text>
+                                </Group>
+                            </Grid.Col>
+                        ))}
+                    </Grid>
+                </>
             )}
 
             {/* Review/Reason */}
