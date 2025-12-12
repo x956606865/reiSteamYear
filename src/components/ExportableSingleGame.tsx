@@ -59,7 +59,7 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
                 <Stack p="lg" gap="lg">
                     {/* Title and Rating */}
                     <Group justify="space-between" align="flex-start" wrap="nowrap">
-                        <Stack gap={4} style={{ flex: 1 }}>
+                        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
                             <Title order={2} c="white" style={{ fontSize: 28, lineHeight: 1.2 }}>
                                 {game.name}
                             </Title>
@@ -75,7 +75,7 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
                             </Group>
                         </Stack>
 
-                        <Group gap={6} align="center">
+                        <Group gap={6} align="center" style={{ flexShrink: 0 }}>
                             <Text fw={900} style={{ fontSize: 42, lineHeight: 1 }} c={game.rating >= 90 ? 'yellow' : 'blue'}>
                                 {game.rating}
                             </Text>
