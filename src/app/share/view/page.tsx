@@ -83,7 +83,7 @@ function ShareViewContent() {
             <Grid>
                 {list.games.sort((a, b) => b.rating - a.rating).map((game) => (
                     <Grid.Col key={game.id} span={{ base: 12, md: 6, lg: 4, xl: 3 }}>
-                        <ShareGameCard game={game} readOnly />
+                        <ShareGameCard game={game} readOnly listType={list.type} />
                     </Grid.Col>
                 ))}
             </Grid>

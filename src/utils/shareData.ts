@@ -10,20 +10,25 @@ interface MinGame {
     rv?: number;    // visuals
     rs?: number;    // story
     rj?: number;    // subjective
-    sk?: number[];  // skipped indexes (0:gameplay, 1:visuals, 2:story, 3:subjective)
+    rc?: number;    // character (manga)
+    tg?: Record<string, number>; // tags (manga)
+    cv?: string;    // cover url (needed for manga/non-steam)
+    sk?: number[];  // skipped indexes
     c?: string;     // comment/reason
 }
 
 interface MinList {
     t: string;      // title
+    tp?: 'g' | 'm'; // type: game | manga
     g: MinGame[];   // games
 }
 
-const SKIP_MAP = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
+const SKIP_MAP = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective', 'ratingCharacter'];
 
 export const encodeShareList = (list: ShareList): string => {
     const minList: MinList = {
         t: list.title,
+        tp: list.type === 'manga' ? 'm' : 'g',
         g: list.games.map(game => {
             const minGame: MinGame = {
                 i: game.id,
@@ -36,7 +41,21 @@ export const encodeShareList = (list: ShareList): string => {
             if (game.ratingVisuals) minGame.rv = game.ratingVisuals;
             if (game.ratingStory) minGame.rs = game.ratingStory;
             if (game.ratingSubjective) minGame.rj = game.ratingSubjective;
+            if (game.ratingCharacter) minGame.rc = game.ratingCharacter;
+
+            if (game.tags && Object.keys(game.tags).length > 0) {
+                minGame.tg = game.tags;
+            }
+
             if (game.reason) minGame.c = game.reason;
+
+            // Store cover URL for non-steam (Manga) or if explicitly set and strictly different?
+            // For simplicity/safety, if it's manga, ALWAYS store cover.
+            // If it's game, we assume Steam ID is enough, unless it's a manual game with custom cover?
+            // For now, let's just save cover if it's manga.
+            if (list.type === 'manga' && game.coverUrl) {
+                minGame.cv = game.coverUrl;
+            }
 
             if (game.skippedRatings && game.skippedRatings.length > 0) {
                 minGame.sk = game.skippedRatings
@@ -56,32 +75,47 @@ export const decodeShareList = (str: string): ShareList | null => {
         const json = LZString.decompressFromEncodedURIComponent(str);
         if (!json) return null;
 
-        // Handle legacy format (full format) if user somehow used old link?
-        // Simple check: does it look like MinList?
         const parsed = JSON.parse(json);
 
-        // Legacy support: if it has 'games' and 'title' (full names), it's legacy.
-        if (parsed.games && parsed.title) return parsed as ShareList;
+        // Legacy compatibility
+        if (parsed.games && parsed.title) {
+            const legacyList = parsed as ShareList;
+            return {
+                ...legacyList,
+                type: legacyList.type || 'game'
+            };
+        }
 
         const minList = parsed as MinList;
         if (!minList.g || !minList.t) return null;
 
+        const listType = minList.tp === 'm' ? 'manga' : 'game';
+
         return {
             id: 'imported', // Placeholder
             title: minList.t,
+            type: listType,
             createdAt: Date.now(),
             games: minList.g.map(mg => {
+                let coverUrl = mg.cv;
+                if (!coverUrl) {
+                    // Fallback for games (Steam)
+                    coverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${mg.i}/header.jpg`;
+                }
+
                 const game: ShareGame = {
                     id: mg.i,
                     name: mg.n,
                     rating: mg.r,
-                    coverUrl: `https://cdn.cloudflare.steamstatic.com/steam/apps/${mg.i}/header.jpg`,
+                    coverUrl: coverUrl,
                     reason: mg.c,
                     ratingGameplay: mg.rg,
                     ratingVisuals: mg.rv,
                     ratingStory: mg.rs,
                     ratingSubjective: mg.rj,
-                    skippedRatings: mg.sk?.map(i => SKIP_MAP[i])
+                    ratingCharacter: mg.rc,
+                    tags: mg.tg,
+                    skippedRatings: mg.sk?.map(i => SKIP_MAP[i]).filter(Boolean)
                 };
                 return game;
             })
