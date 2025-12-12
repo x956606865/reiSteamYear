@@ -44,7 +44,7 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
     const renderContent = () => (
         <>
             {/* Title and Rating */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center' }}>
                 <Stack gap={4} style={{ minWidth: 0 }}>
                     <Title order={2} c="white" style={{ fontSize: listType === 'manga' ? 24 : 28, lineHeight: 1.2 }} lineClamp={2}>
                         {game.name}
