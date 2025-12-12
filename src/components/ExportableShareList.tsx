@@ -156,7 +156,7 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                                 return (
                                                     <Grid.Col span={12} key={item.key}>
                                                         <Group gap={8} align="center" wrap="nowrap">
-                                                            <Text size="xs" c="dimmed" w={32}>{item.label}</Text>
+                                                            <Text size="xs" c="dimmed" w={48} style={{ whiteSpace: 'nowrap' }}>{item.label}</Text>
                                                             <Progress
                                                                 value={val}
                                                                 color={item.color}
@@ -181,7 +181,7 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                                         return (
                                                             <Grid.Col span={12} key={key}>
                                                                 <Group gap={8} align="center" wrap="nowrap">
-                                                                    <Text size="xs" c="dimmed" w={32}>{getAttributeLabel(key)}</Text>
+                                                                    <Text size="xs" c="dimmed" w={48} style={{ whiteSpace: 'nowrap' }}>{getAttributeLabel(key)}</Text>
                                                                     <Progress
                                                                         value={value * 10} // 0-10 -> 0-100
                                                                         color={getAttributeColor(key)}
