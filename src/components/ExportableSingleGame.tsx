@@ -157,53 +157,74 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
     return (
         <Box
             ref={ref}
-            bg="#1A1B1E"
             p={listType === 'manga' ? 20 : 32}
             style={{
                 width: listType === 'manga' ? 800 : 600,
                 // minHeight: 600, // Let it grow naturally but keep width fixed
                 color: 'white',
-                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif'
+                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundColor: '#1A1B1E', // Fallback
             }}
         >
-            <Card radius="lg" bg="dark.6" padding={0} withBorder style={{ borderColor: '#2C2E33', overflow: 'hidden' }}>
-                {listType === 'manga' ? (
-                    <Group gap={0} align="stretch">
-                        <div style={{ width: 280, position: 'relative', flexShrink: 0, borderRight: '1px solid #2C2E33' }}>
-                            <img
-                                src={getProxyUrl(game.coverUrl)}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    display: 'block',
-                                    objectFit: 'cover',
-                                    objectPosition: 'top',
-                                }}
-                                alt={game.name}
-                            />
-                        </div>
-                        <Stack p="lg" justify="flex-start" gap="md" style={{ flex: 1, minWidth: 0 }}>
-                            {renderContent()}
-                        </Stack>
-                    </Group>
-                ) : (
-                    <>
-                        {/* Header Image */}
-                        <Card.Section>
-                            <Image
-                                src={getProxyUrl(game.coverUrl)}
-                                h={280}
-                                alt={game.name}
-                                fallbackSrc="https://placehold.co/600x280?text=No+Image"
-                            />
-                        </Card.Section>
+            {/* Ambient Background */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `url(${getProxyUrl(game.coverUrl)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(60px) brightness(0.6) saturate(1.5)',
+                    transform: 'scale(1.2)',
+                    zIndex: 0,
+                }}
+            />
 
-                        <Stack p="lg" gap="lg">
-                            {renderContent()}
-                        </Stack>
-                    </>
-                )}
-            </Card>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+                <Card radius="lg" bg="dark.6" padding={0} withBorder style={{ borderColor: '#2C2E33', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                    {listType === 'manga' ? (
+                        <Group gap={0} align="stretch">
+                            <div style={{ width: 280, position: 'relative', flexShrink: 0, borderRight: '1px solid #2C2E33' }}>
+                                <img
+                                    src={getProxyUrl(game.coverUrl)}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'block',
+                                        objectFit: 'cover',
+                                        objectPosition: 'top',
+                                    }}
+                                    alt={game.name}
+                                />
+                            </div>
+                            <Stack p="lg" justify="flex-start" gap="md" style={{ flex: 1, minWidth: 0 }}>
+                                {renderContent()}
+                            </Stack>
+                        </Group>
+                    ) : (
+                        <>
+                            {/* Header Image */}
+                            <Card.Section>
+                                <Image
+                                    src={getProxyUrl(game.coverUrl)}
+                                    h={280}
+                                    alt={game.name}
+                                    fallbackSrc="https://placehold.co/600x280?text=No+Image"
+                                />
+                            </Card.Section>
+
+                            <Stack p="lg" gap="lg">
+                                {renderContent()}
+                            </Stack>
+                        </>
+                    )}
+                </Card>
+            </div>
         </Box>
     );
 });
