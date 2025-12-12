@@ -265,7 +265,7 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
                     <>
                         <Divider label="属性标签" labelPosition="left" />
                         <Grid gutter="xs">
-                            {Object.entries(game.tags).map(([key, value]) => (
+                            {Object.entries(game.tags || {}).map(([key, value]) => (
                                 <Grid.Col span={6} key={key}>
                                     <Group gap={8} align="center" wrap="nowrap">
                                         <Text size="sm" c="dimmed" w={48} lineClamp={1}>{getAttributeLabel(key)}</Text>

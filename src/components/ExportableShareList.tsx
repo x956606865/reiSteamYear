@@ -1,10 +1,11 @@
-import { Box, Title, Text, SimpleGrid, Card, Image, Group, Stack, Badge, Grid, Progress } from '@mantine/core';
+import { Box, Title, Text, SimpleGrid, Card, Image, Group, Stack, Badge, Grid, Progress, Divider } from '@mantine/core';
 import { IconStarFilled, IconTrophy } from '@tabler/icons-react';
 import { ShareList } from '@/store/useShareStore';
 import { forwardRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import LZString from 'lz-string';
 import { encodeShareList } from '@/utils/shareData';
+import { getAttributeColor, getAttributeLabel } from '@/lib/constants';
 
 interface ExportableShareListProps {
     list: ShareList;
@@ -29,12 +30,12 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
             {/* Header */}
             <Stack mb={60} align="center" gap={0}>
                 <Title c="white" order={1} style={{ fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{list.title}</Title>
-                <Text size="xl" c="dimmed" mt="xs">安利列表 • 共 {list.games.length} 款游戏</Text>
+                <Text size="xl" c="dimmed" mt="xs" style={{ whiteSpace: 'nowrap' }}>安利列表 • 共 {list.games.length} {list.type === 'manga' ? '部漫画' : '款游戏'}</Text>
             </Stack>
 
             {/* List Header */}
             <Grid mb="md" px="md" visibleFrom="xs">
-                <Grid.Col span={4}><Text size="sm" fw={700} c="dimmed">GAME</Text></Grid.Col>
+                <Grid.Col span={4}><Text size="sm" fw={700} c="dimmed">{list.type === 'manga' ? 'MANGA' : 'GAME'}</Text></Grid.Col>
                 <Grid.Col span={4}><Text size="sm" fw={700} c="dimmed">RATINGS</Text></Grid.Col>
                 <Grid.Col span={4}><Text size="sm" fw={700} c="dimmed">COMMENT</Text></Grid.Col>
             </Grid>
@@ -87,7 +88,7 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
 
                                         <Stack gap="xs">
                                             <img
-                                                src={list.type === 'manga' ? (game.coverUrl || '') : `/api/image-proxy?url=${encodeURIComponent(game.coverUrl)}&gid=${game.id}`}
+                                                src={`/api/image-proxy?url=${encodeURIComponent(game.coverUrl || '')}&gid=${game.id}`}
                                                 style={{
                                                     width: list.type === 'manga' ? 140 : 200,
                                                     height: list.type === 'manga' ? 200 : 94,
@@ -170,21 +171,31 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                             })}
                                         </Grid>
 
-                                        {/* Manga Tags */}
-                                        {list.type === 'manga' && game.tags && (
-                                            <Group gap="xs" mt="xs">
-                                                {Object.entries(game.tags).map(([key, value]) => {
-                                                    // Only show if value > 0? Or just show.
-                                                    if (!value) return null;
-                                                    const labelMap: any = { yuri: '百合', sweetness: '糖度', angst: '刀度' };
-                                                    const colorMap: any = { yuri: 'red.4', sweetness: 'pink.4', angst: 'dark.4' };
-                                                    return (
-                                                        <Badge key={key} size="sm" variant="outline" color={colorMap[key] || 'gray'}>
-                                                            {labelMap[key] || key}: {value}
-                                                        </Badge>
-                                                    )
-                                                })}
-                                            </Group>
+                                        {/* Manga Tags (Progress Bar Style) */}
+                                        {list.type === 'manga' && game.tags && Object.keys(game.tags).length > 0 && (
+                                            <>
+                                                <Divider my="xs" color="white" style={{ opacity: 0.1 }} />
+                                                <Grid gutter="xs">
+                                                    {Object.entries(game.tags).map(([key, value]) => {
+                                                        if (!value) return null;
+                                                        return (
+                                                            <Grid.Col span={12} key={key}>
+                                                                <Group gap={8} align="center" wrap="nowrap">
+                                                                    <Text size="xs" c="dimmed" w={32}>{getAttributeLabel(key)}</Text>
+                                                                    <Progress
+                                                                        value={value * 10} // 0-10 -> 0-100
+                                                                        color={getAttributeColor(key)}
+                                                                        size="sm"
+                                                                        radius="xl"
+                                                                        style={{ flex: 1 }}
+                                                                    />
+                                                                    <Text size="xs" w={24} ta="right" fw={700} c="white">{value}</Text>
+                                                                </Group>
+                                                            </Grid.Col>
+                                                        )
+                                                    })}
+                                                </Grid>
+                                            </>
                                         )}
                                     </Stack>
                                 </Grid.Col>
@@ -195,6 +206,7 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                     <Text
                                         size="sm"
                                         c="white"
+                                        lineClamp={10}
                                         style={{
                                             whiteSpace: 'pre-wrap',
                                             lineHeight: 1.6,
