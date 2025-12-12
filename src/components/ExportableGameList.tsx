@@ -13,6 +13,7 @@ export interface ExportableGame {
         subjective: number;
     };
     skippedRatings?: string[];
+    playtime?: number;
 }
 
 export interface ExportableGameListProps {

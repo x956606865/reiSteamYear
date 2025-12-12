@@ -1,4 +1,4 @@
-import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button, Progress } from '@mantine/core';
+import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button, Progress, NumberInput } from '@mantine/core';
 import { useShareStore, ShareGame } from '@/store/useShareStore';
 import { IconTrash, IconExternalLink, IconEyeOff, IconShare } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
@@ -16,6 +16,8 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
 
     // Local state for reason text to avoid sluggish typing
     const [reason, setReason] = useState(game.reason || '');
+    // Local state for playtime
+    const [playtimeHours, setPlaytimeHours] = useState<number | string>(game.playtime ? Math.round(game.playtime / 60) : '');
 
     // Local state for smooth sliding optimization
     const [localRatings, setLocalRatings] = useState({
@@ -40,6 +42,15 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
         if (readOnly || !listId) return;
         if (reason !== game.reason) {
             updateGame(listId, { id: game.id, reason });
+        }
+    };
+
+    const handlePlaytimeBlur = () => {
+        if (readOnly || !listId) return;
+        const val = typeof playtimeHours === 'number' ? playtimeHours : 0;
+        const minutes = val > 0 ? val * 60 : undefined;
+        if (minutes !== game.playtime) {
+            updateGame(listId, { id: game.id, playtime: minutes });
         }
     };
 
@@ -150,7 +161,8 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
                             story: localRatings.ratingStory,
                             subjective: localRatings.ratingSubjective
                         },
-                        skippedRatings: game.skippedRatings
+                        skippedRatings: game.skippedRatings,
+                        playtime: game.playtime // Pass minutes directly
                     },
                     listName: "游戏鉴赏" // Or pass list title if available? listId is not title.
                     // Ideally we should pass list title, but keeping it simple for now or fetch from store if critical.
@@ -238,6 +250,22 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
                     onBlur={handleReasonBlur}
                     mt="xs"
                 />
+
+                <Group align="center" gap="xs">
+                    <Text size="sm" fw={700}>游玩时长 (小时)</Text>
+                    <NumberInput
+                        placeholder="可选"
+                        size="xs"
+                        min={0}
+                        allowNegative={false}
+                        value={playtimeHours}
+                        onChange={setPlaytimeHours}
+                        onBlur={handlePlaytimeBlur}
+                        readOnly={readOnly}
+                        variant={readOnly ? "filled" : "default"}
+                        style={{ width: 80 }}
+                    />
+                </Group>
 
                 {!readOnly && (
                     <Group justify="flex-end" mt="xs">

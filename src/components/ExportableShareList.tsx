@@ -101,6 +101,11 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                             <Title order={3} c={isHighRank ? "white" : "gray.3"} lineClamp={2} style={{ fontSize: 20 }}>
                                                 {game.name}
                                             </Title>
+                                            {game.playtime && game.playtime > 0 && (
+                                                <Text size="sm" c="dimmed">
+                                                    已游玩 {Math.round(game.playtime / 60)} 小时
+                                                </Text>
+                                            )}
                                         </Stack>
                                     </Group>
                                 </Grid.Col>

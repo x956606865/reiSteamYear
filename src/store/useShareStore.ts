@@ -13,6 +13,7 @@ export interface ShareGame {
     ratingSubjective?: number;
     skippedRatings?: string[];
     reason?: string; // Recommendation reason
+    playtime?: number; // Playtime in minutes (optional)
 }
 
 export interface ShareList {
