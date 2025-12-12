@@ -1,7 +1,8 @@
 import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button, Progress } from '@mantine/core';
 import { useShareStore, ShareGame } from '@/store/useShareStore';
-import { IconTrash, IconExternalLink, IconEyeOff } from '@tabler/icons-react';
+import { IconTrash, IconExternalLink, IconEyeOff, IconShare } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
+import { GameShareModal } from './GameShareModal';
 
 interface ShareGameCardProps {
     game: ShareGame;
@@ -11,6 +12,7 @@ interface ShareGameCardProps {
 
 export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardProps) {
     const { updateGame, removeGame } = useShareStore();
+    const [shareOpened, setShareOpened] = useState(false);
 
     // Local state for reason text to avoid sluggish typing
     const [reason, setReason] = useState(game.reason || '');
@@ -119,7 +121,41 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
                         <IconExternalLink size={16} />
                     </ActionIcon>
                 </Tooltip>
+
+                <Tooltip label="分享单张卡片">
+                    <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="sm"
+                        onClick={() => setShareOpened(true)}
+                    >
+                        <IconShare size={16} />
+                    </ActionIcon>
+                </Tooltip>
             </Group>
+
+            <GameShareModal
+                opened={shareOpened}
+                onClose={() => setShareOpened(false)}
+                data={{
+                    game: {
+                        id: game.id,
+                        name: game.name,
+                        coverUrl: imageUrl,
+                        rating: game.rating,
+                        reason: game.reason,
+                        subRatings: {
+                            gameplay: localRatings.ratingGameplay,
+                            visuals: localRatings.ratingVisuals,
+                            story: localRatings.ratingStory,
+                            subjective: localRatings.ratingSubjective
+                        },
+                        skippedRatings: game.skippedRatings
+                    },
+                    listName: "游戏鉴赏" // Or pass list title if available? listId is not title.
+                    // Ideally we should pass list title, but keeping it simple for now or fetch from store if critical.
+                }}
+            />
 
             <Stack gap="xs">
                 <Group justify="space-between">

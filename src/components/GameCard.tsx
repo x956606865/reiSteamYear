@@ -4,8 +4,10 @@ import { useDisclosure } from '@mantine/hooks';
 import { ReviewModal } from './ReviewModal';
 import { EditManualGameModal } from './EditManualGameModal';
 import { useReviewStore, GameReview } from '@/store/useReviewStore';
-import { IconMessageDots, IconEyeOff, IconPencil, IconTrash } from '@tabler/icons-react';
+import { IconMessageDots, IconEyeOff, IconPencil, IconTrash, IconShare } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
+import { GameShareModal } from './GameShareModal';
+import { useSession } from 'next-auth/react';
 
 interface GameCardProps {
     game: SteamGame;
@@ -14,7 +16,9 @@ interface GameCardProps {
 export function GameCard({ game }: GameCardProps) {
     const [opened, { open, close }] = useDisclosure(false);
     const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
+    const [shareOpened, setShareOpened] = useState(false);
     const { reviews, addReview, removeManualGame } = useReviewStore();
+    const { data: session } = useSession();
     const review = reviews[game.appid];
 
     // ... logic ...
@@ -302,6 +306,12 @@ export function GameCard({ game }: GameCardProps) {
                             </ActionIcon>
                         </Tooltip>
 
+                        <Tooltip label="分享单张卡片">
+                            <ActionIcon variant="light" color="cyan" onClick={() => setShareOpened(true)} size="sm">
+                                <IconShare size={16} />
+                            </ActionIcon>
+                        </Tooltip>
+
                         {/* Manual Game Actions */}
                         {(game as any).isManual && (
                             <>
@@ -321,6 +331,33 @@ export function GameCard({ game }: GameCardProps) {
                 </Stack>
             </Card >
             <ReviewModal opened={opened} onClose={close} game={game} />
+            <GameShareModal
+                opened={shareOpened}
+                onClose={() => setShareOpened(false)}
+                data={{
+                    game: {
+                        id: game.appid,
+                        name: game.name,
+                        coverUrl: imageUrl,
+                        rating: review?.rating ?? 0,
+                        subRatings: {
+                            gameplay: localRatings.ratingGameplay,
+                            visuals: localRatings.ratingVisuals,
+                            story: localRatings.ratingStory,
+                            subjective: localRatings.ratingSubjective
+                        },
+                        skippedRatings: review?.skippedRatings,
+                        status: review?.status,
+                        playtime: game.playtime_forever,
+                        reason: review?.comment
+                    },
+                    user: session?.user ? {
+                        name: session.user.name ?? '',
+                        image: session.user.image ?? ''
+                    } : undefined,
+                    year: new Date().getFullYear()
+                }}
+            />
             {(game as any).isManual && (
                 <EditManualGameModal
                     opened={editOpened}
