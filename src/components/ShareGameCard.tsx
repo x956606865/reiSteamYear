@@ -186,6 +186,7 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
                 opened={shareOpened}
                 onClose={() => setShareOpened(false)}
                 data={{
+                    listType: listType,
                     game: {
                         id: game.id,
                         name: game.name,
@@ -197,10 +198,11 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
                             visuals: localRatings.ratingVisuals,
                             story: localRatings.ratingStory,
                             subjective: localRatings.ratingSubjective,
-                            // TODO: Pass character rating to Share Modal if we update modal too
+                            character: localRatings.ratingCharacter,
                         },
                         skippedRatings: game.skippedRatings,
-                        playtime: game.playtime // Pass minutes directly
+                        playtime: game.playtime, // Pass minutes directly
+                        tags: localTags,
                     },
                     listName: "安利详情"
                 }}

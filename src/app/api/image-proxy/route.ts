@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
             return new NextResponse('Invalid URL format', { status: 400 });
         }
 
-        if (!ALLOWED_DOMAINS.includes(parsedUrl.hostname)) {
+        if (!ALLOWED_DOMAINS.includes(parsedUrl.hostname) && !parsedUrl.hostname.endsWith('.bgm.tv') && parsedUrl.hostname !== 'bgm.tv') {
             return new NextResponse('Domain not allowed', { status: 400 });
         }
 
