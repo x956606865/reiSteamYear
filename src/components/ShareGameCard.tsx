@@ -1,5 +1,5 @@
 // ... imports
-import { ActionIcon, Badge, Box, Button, Card, Divider, Group, Image, NumberInput, Paper, Progress, Rating, Slider, Stack, Text, Textarea, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Box, Button, Card, Divider, Group, Image, NumberInput, Paper, Progress, Rating, Slider, Stack, Text, Textarea, Tooltip, Grid } from '@mantine/core';
 import { useShareStore, ShareGame } from '@/store/useShareStore';
 import { IconTrash, IconExternalLink, IconEyeOff, IconShare, IconEdit } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
@@ -264,29 +264,34 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
                 {listType === 'manga' && (
                     <>
                         <Divider label="属性标签" labelPosition="left" />
-                        <Group gap="xs">
-                            {game.tags && Object.entries(game.tags).map(([key, value]) => (
-                                <Badge
-                                    key={key}
-                                    size="lg"
-                                    variant="outline"
-                                    color={getAttributeColor(key)}
-                                    style={{ textTransform: 'none' }}
-                                >
-                                    {getAttributeLabel(key)}: {value}
-                                </Badge>
+                        <Grid gutter="xs">
+                            {Object.entries(game.tags).map(([key, value]) => (
+                                <Grid.Col span={6} key={key}>
+                                    <Group gap={8} align="center" wrap="nowrap">
+                                        <Text size="sm" c="dimmed" w={48} lineClamp={1}>{getAttributeLabel(key)}</Text>
+                                        <Progress
+                                            value={value * 10}
+                                            color={getAttributeColor(key)}
+                                            size="sm"
+                                            radius="xl"
+                                            style={{ flex: 1 }}
+                                        />
+                                        <Text size="sm" w={28} ta="right" fw={700}>{value}</Text>
+                                    </Group>
+                                </Grid.Col>
                             ))}
-                            <Button
-                                variant="default"
-                                size="xs"
-                                radius="xl"
-                                leftSection={<IconEdit size={12} />}
-                                onClick={() => setAttributeModalOpen(true)}
-                                disabled={readOnly}
-                            >
-                                管理属性
-                            </Button>
-                        </Group>
+                        </Grid>
+                        <Button
+                            variant="default"
+                            size="xs"
+                            radius="xl"
+                            leftSection={<IconEdit size={12} />}
+                            onClick={() => setAttributeModalOpen(true)}
+                            disabled={readOnly}
+                            mt="xs"
+                        >
+                            管理属性
+                        </Button>
                         <AttributeManagerModal
                             opened={attributeModalOpen}
                             onClose={() => setAttributeModalOpen(false)}
@@ -349,6 +354,6 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
                     )
                 }
             </Stack>
-        </Card>
+        </Card >
     );
 }

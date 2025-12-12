@@ -20,7 +20,7 @@ export function AttributeManagerModal({ opened, onClose, currentTags, onConfirm 
     }, [currentTags, opened]);
 
     const handleAddTag = (key: string, defaultScore = 5) => {
-        if (Object.keys(tags).length >= 5) {
+        if (Object.keys(tags).length >= 4) {
             // Shake animation or toast could be added here
             return;
         }
@@ -53,11 +53,11 @@ export function AttributeManagerModal({ opened, onClose, currentTags, onConfirm 
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title="管理属性标签 (最多5个)" size="lg" centered>
+        <Modal opened={opened} onClose={onClose} title="管理属性标签 (最多4个)" size="lg" centered>
             <Stack>
                 {/* Active Tags Area */}
                 <Paper p="md" withBorder bg="dark.8">
-                    <Text size="sm" c="dimmed" mb="xs">已选属性 ({Object.keys(tags).length}/5)</Text>
+                    <Text size="sm" c="dimmed" mb="xs">已选属性 ({Object.keys(tags).length}/4)</Text>
                     {Object.keys(tags).length === 0 ? (
                         <Text size="sm" c="dimmed" fs="italic">暂无属性，请从下方选择或添加</Text>
                     ) : (
@@ -117,7 +117,7 @@ export function AttributeManagerModal({ opened, onClose, currentTags, onConfirm 
                                                 color={item.color.split('.')[0]}
                                                 leftSection={isSelected ? <IconCheck size={14} /> : <IconPlus size={14} />}
                                                 onClick={() => isSelected ? handleRemoveTag(item.value) : handleAddTag(item.value)}
-                                                disabled={!isSelected && Object.keys(tags).length >= 5}
+                                                disabled={!isSelected && Object.keys(tags).length >= 4}
                                                 justify="start"
                                                 styles={{ label: { textOverflow: 'ellipsis', overflow: 'hidden' } }}
                                             >
@@ -141,7 +141,7 @@ export function AttributeManagerModal({ opened, onClose, currentTags, onConfirm 
                                 />
                                 <Button
                                     onClick={handleAddCustomTag}
-                                    disabled={!customTagName.trim() || Object.keys(tags).length >= 5}
+                                    disabled={!customTagName.trim() || Object.keys(tags).length >= 4}
                                 >
                                     添加
                                 </Button>
