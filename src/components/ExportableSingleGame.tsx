@@ -43,9 +43,9 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
     const renderContent = () => (
         <>
             {/* Title and Rating */}
-            <Group justify="space-between" align="flex-start" wrap="nowrap">
-                <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-                    <Title order={2} c="white" style={{ fontSize: 28, lineHeight: 1.2 }} lineClamp={2}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'start' }}>
+                <Stack gap={4} style={{ minWidth: 0 }}>
+                    <Title order={2} c="white" style={{ fontSize: listType === 'manga' ? 24 : 28, lineHeight: 1.2 }} lineClamp={2}>
                         {game.name}
                     </Title>
                     {/* Badges for status or playtime */}
@@ -60,16 +60,12 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
                     </Group>
                 </Stack>
 
-                <Group gap={6} align="center" style={{ flexShrink: 0 }}>
-                    <Text fw={900} style={{ fontSize: 42, lineHeight: 1 }} c={game.rating >= 90 ? 'yellow' : 'blue'}>
+                <div style={{ flexShrink: 0 }}>
+                    <Text fw={900} style={{ fontSize: 48, lineHeight: 1 }} c={game.rating >= 90 ? 'yellow' : 'blue'}>
                         {game.rating}
                     </Text>
-                    <Stack gap={0}>
-                        <IconStarFilled size={20} color="gold" />
-                        <Text size="xs" fw={700} c="dimmed">SCORE</Text>
-                    </Stack>
-                </Group>
-            </Group>
+                </div>
+            </div>
 
             {/* Sub Ratings */}
             {game.subRatings && (
