@@ -19,7 +19,7 @@ export interface SingleGameExportProps {
             character?: number;
         };
         skippedRatings?: string[];
-        status?: 'beaten' | 'played' | 'dropped'; // For annual review
+        status?: 'played' | 'beaten' | 'dropped' | 'reading' | 'completed'; // For annual review
         playtime?: number; // For annual review
         tags?: {
             yuri?: number;

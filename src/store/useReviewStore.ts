@@ -8,16 +8,19 @@ export interface GameReview {
     ratingVisuals?: number; // Music & Art
     ratingStory?: number;
     ratingSubjective?: number;
-    status: 'played' | 'beaten' | 'dropped';
+    ratingCharacter?: number; // New for Manga
+    status: 'played' | 'beaten' | 'dropped' | 'reading' | 'completed'; // Added reading/completed for manga
     comment?: string;
     isBeatable?: boolean;
     excluded?: boolean;
     skippedRatings?: string[]; // Keys of ratings to exclude from average
     noRating?: boolean; // If true, game is not rated (skipped)
+    tags?: Record<string, number>; // New for Manga
 }
 
 export interface ManualGame extends SteamGame {
     isManual: true;
+    coverUrl?: string; // Custom cover URL
 }
 
 interface ReviewStore {

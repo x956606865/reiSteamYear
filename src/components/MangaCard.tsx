@@ -1,9 +1,8 @@
 import { Card, Image, Text, Group, Badge, Stack, SegmentedControl, ActionIcon, Tooltip, Slider, Switch } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { useReviewStore, MangaItem } from '@/store/useReviewStore';
-import { IconMessageDots, IconTrash } from '@tabler/icons-react';
+import { useReviewStore, ManualGame, GameReview } from '@/store/useReviewStore';
+import { IconTrash } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
-import { ReviewModal } from './ReviewModal'; // Might need adaptation or standard review modal is fine if types align? 
+// Might need adaptation or standard review modal is fine if types align? 
 // Actually ReviewModal expects SteamGame/GameReview. Might need a generic one or just a simple comment modal here.
 // For now, I'll inline a simple comment edit or reuse if I can refactor.
 // Let's assume unique modal for simpilicity or I'll just skip comment modal for now and focus on ratings.
@@ -11,26 +10,70 @@ import { ReviewModal } from './ReviewModal'; // Might need adaptation or standar
 // No, prompt doesn't explicitly mention comments for Manga but Store has `comment`.
 // I'll add a simple comment modal logic later or adapts.
 
-export function MangaCard({ item }: { item: MangaItem }) {
-    const { updateMangaItem, removeMangaItem } = useReviewStore();
+export function MangaCard({ item }: { item: ManualGame }) {
+    const { reviews, addReview, updateManualGame, removeManualGame } = useReviewStore();
+    const review = reviews[item.appid] || {};
 
     // Local state for smooth sliding
-    const [ratings, setRatings] = useState(item.rating);
-    const [tags, setTags] = useState(item.tags || {});
+    // Initialize from review data
+    const [ratings, setRatings] = useState({
+        art: review.ratingVisuals || 0,
+        story: review.ratingStory || 0,
+        character: review.ratingCharacter || 0,
+        subjective: review.ratingSubjective || 0,
+    });
+    const [tags, setTags] = useState<Record<string, number>>(review.tags || {});
 
-    // Sync on external change
+    // Sync when review changes (optional, but good for consistency)
     useEffect(() => {
-        setRatings(item.rating);
-        setTags(item.tags || {});
-    }, [item]);
+        setRatings({
+            art: review.ratingVisuals || 0,
+            story: review.ratingStory || 0,
+            character: review.ratingCharacter || 0,
+            subjective: review.ratingSubjective || 0,
+        });
+        setTags(review.tags || {});
+    }, [review.ratingVisuals, review.ratingStory, review.ratingCharacter, review.ratingSubjective, review.tags]);
 
-    const handleUpdate = (updates: Partial<MangaItem>) => {
-        updateMangaItem({ id: item.id, ...updates });
+    // Calculate Average
+    const validRatings = Object.entries(ratings).map(([_, v]) => v).filter(v => v > 0);
+    const averageScore = validRatings.length > 0
+        ? Math.round(validRatings.reduce((a, b) => a + b, 0) / validRatings.length * 10) // 0-100 scale? GameReview rating is usually 0-100?
+        // Wait, Slider is 0-10. GameReview.rating is 0-100 usually?
+        // In GameCard: const total = ... / count.
+        // Let's assume we store 0-100 int in review.rating, but usage here is 0-10 float.
+        // So average * 10.
+        : 0;
+
+    const handleUpdateReview = (updates: Partial<GameReview>) => {
+        // We need to merge with existing review
+        addReview(item.appid, {
+            ...review,
+            // Ensure mandatory fields if new
+            status: review.status || 'reading',
+            rating: review.rating || 0,
+            ...updates
+        });
     };
 
+    // When sliders change end/commit
+    const commitRatings = (newRatings: typeof ratings) => {
+        // Calculate new average
+        const vals = Object.values(newRatings).filter(v => v > 0);
+        const avg = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) : 0;
+
+        handleUpdateReview({
+            rating: avg,
+            ratingVisuals: newRatings.art,
+            ratingStory: newRatings.story,
+            ratingCharacter: newRatings.character,
+            ratingSubjective: newRatings.subjective,
+        });
+    }
+
     const handleDelete = () => {
-        if (confirm(`确定要删除 "${item.title}" 吗？`)) {
-            removeMangaItem(item.id);
+        if (confirm(`确定要删除 "${item.name}" 吗？`)) {
+            removeManualGame(item.appid);
         }
     };
 
@@ -51,19 +94,19 @@ export function MangaCard({ item }: { item: MangaItem }) {
         <Card shadow="sm" padding="lg" radius="md" withBorder>
             <Card.Section>
                 <Image
-                    src={item.cover}
+                    src={item.coverUrl || item.img_icon_url}
                     h={180} // Manga covers are usually portrait, taller
                     fit="contain" // Or cover with top alignment? 
                     // Bangumi small/medium covers are portrait.
-                    alt={item.title}
+                    alt={item.name}
                     style={{ backgroundColor: '#f0f0f0' }}
                 />
             </Card.Section>
 
             <Group justify="space-between" mt="md" mb="xs">
-                <Text fw={600} lineClamp={1} title={item.title} style={{ flex: 1 }}>{item.title}</Text>
-                {item.reviewStatus === 'completed' && <Badge color="green" variant="light">已看完</Badge>}
-                {item.reviewStatus === 'dropped' && <Badge color="red" variant="light">已弃坑</Badge>}
+                <Text fw={600} lineClamp={1} title={item.name} style={{ flex: 1 }}>{item.name}</Text>
+                {review.status === 'completed' && <Badge color="green" variant="light">已看完</Badge>}
+                {review.status === 'dropped' && <Badge color="red" variant="light">已弃坑</Badge>}
             </Group>
 
             <Stack gap="xs">
@@ -71,8 +114,8 @@ export function MangaCard({ item }: { item: MangaItem }) {
                 <SegmentedControl
                     size="xs"
                     fullWidth
-                    value={item.reviewStatus}
-                    onChange={(val) => handleUpdate({ reviewStatus: val as any })}
+                    value={review.status || 'reading'}
+                    onChange={(val) => handleUpdateReview({ status: val as any })}
                     data={[
                         { label: '在看', value: 'reading' },
                         { label: '看完', value: 'completed' },
@@ -96,7 +139,8 @@ export function MangaCard({ item }: { item: MangaItem }) {
                                 label={(val) => val.toFixed(1)}
                                 onChange={(v) => setRatings(prev => ({ ...prev, [conf.key]: v }))}
                                 onChangeEnd={(v) => {
-                                    handleUpdate({ rating: { ...ratings, [conf.key]: v } });
+                                    const newRatings = { ...ratings, [conf.key]: v };
+                                    commitRatings(newRatings);
                                 }}
                             />
                             <Text size="xs" w={24} ta="right">{ratings[conf.key]}</Text>
@@ -120,11 +164,11 @@ export function MangaCard({ item }: { item: MangaItem }) {
                                         if (e.currentTarget.checked) {
                                             const newTags = { ...tags, [conf.key]: 5 }; // Default 5
                                             setTags(newTags);
-                                            handleUpdate({ tags: newTags });
+                                            handleUpdateReview({ tags: newTags });
                                         } else {
                                             const { [conf.key]: _, ...rest } = tags;
                                             setTags(rest);
-                                            handleUpdate({ tags: rest });
+                                            handleUpdateReview({ tags: rest });
                                         }
                                     }}
                                 />
@@ -139,7 +183,8 @@ export function MangaCard({ item }: { item: MangaItem }) {
                                         step={1}
                                         onChange={(v) => setTags(prev => ({ ...prev, [conf.key]: v }))}
                                         onChangeEnd={(v) => {
-                                            handleUpdate({ tags: { ...tags, [conf.key]: v } });
+                                            const newTags = { ...tags, [conf.key]: v };
+                                            handleUpdateReview({ tags: newTags });
                                         }}
                                     />
                                 )}
