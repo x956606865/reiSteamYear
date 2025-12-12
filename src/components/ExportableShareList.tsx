@@ -87,10 +87,10 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
 
                                         <Stack gap="xs">
                                             <img
-                                                src={`/api/image-proxy?url=${encodeURIComponent(game.coverUrl)}&gid=${game.id}`}
+                                                src={list.type === 'manga' ? (game.coverUrl || '') : `/api/image-proxy?url=${encodeURIComponent(game.coverUrl)}&gid=${game.id}`}
                                                 style={{
-                                                    width: 200,
-                                                    height: 94,
+                                                    width: list.type === 'manga' ? 140 : 200,
+                                                    height: list.type === 'manga' ? 200 : 94,
                                                     borderRadius: 8,
                                                     objectFit: 'cover',
                                                     border: isHighRank ? `1px solid ${rankColor}` : 'none'
@@ -101,7 +101,7 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                             <Title order={3} c={isHighRank ? "white" : "gray.3"} lineClamp={2} style={{ fontSize: 20 }}>
                                                 {game.name}
                                             </Title>
-                                            {game.playtime && game.playtime > 0 && (
+                                            {list.type === 'game' && game.playtime && game.playtime > 0 && (
                                                 <Text size="sm" c="dimmed">
                                                     已游玩 {Math.round(game.playtime / 60)} 小时
                                                 </Text>
@@ -133,12 +133,17 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                         </Group>
 
                                         <Grid gutter="xs">
-                                            {[
+                                            {(list.type === 'manga' ? [
+                                                { label: '画风', key: 'ratingVisuals', color: 'pink' },
+                                                { label: '剧情', key: 'ratingStory', color: 'cyan' },
+                                                { label: '人设', key: 'ratingCharacter', color: 'grape' },
+                                                { label: '主观', key: 'ratingSubjective', color: 'orange' },
+                                            ] : [
                                                 { label: '玩法', key: 'ratingGameplay', color: 'blue' },
                                                 { label: '画面', key: 'ratingVisuals', color: 'pink' },
                                                 { label: '剧情', key: 'ratingStory', color: 'cyan' },
                                                 { label: '私心', key: 'ratingSubjective', color: 'orange' },
-                                            ].map((item) => {
+                                            ]).map((item: any) => {
                                                 // @ts-ignore
                                                 // Fallback to total rating if individual rating is not set (same behavior as GameCard)
                                                 const val = game[item.key] ?? game.rating ?? 80;
@@ -164,6 +169,23 @@ export const ExportableShareList = forwardRef<HTMLDivElement, ExportableShareLis
                                                 )
                                             })}
                                         </Grid>
+
+                                        {/* Manga Tags */}
+                                        {list.type === 'manga' && game.tags && (
+                                            <Group gap="xs" mt="xs">
+                                                {Object.entries(game.tags).map(([key, value]) => {
+                                                    // Only show if value > 0? Or just show.
+                                                    if (!value) return null;
+                                                    const labelMap: any = { yuri: '百合', sweetness: '糖度', angst: '刀度' };
+                                                    const colorMap: any = { yuri: 'red.4', sweetness: 'pink.4', angst: 'dark.4' };
+                                                    return (
+                                                        <Badge key={key} size="sm" variant="outline" color={colorMap[key] || 'gray'}>
+                                                            {labelMap[key] || key}: {value}
+                                                        </Badge>
+                                                    )
+                                                })}
+                                            </Group>
+                                        )}
                                     </Stack>
                                 </Grid.Col>
 

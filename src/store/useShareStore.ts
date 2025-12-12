@@ -8,9 +8,15 @@ export interface ShareGame {
     coverUrl: string;
     rating: number; // 0-100 (Final calculated average)
     ratingGameplay?: number;
-    ratingVisuals?: number;
+    ratingVisuals?: number; // Used for "Art" in Manga
     ratingStory?: number;
     ratingSubjective?: number;
+    ratingCharacter?: number; // New for Manga
+    tags?: {
+        yuri?: number;
+        sweetness?: number;
+        angst?: number;
+    };
     skippedRatings?: string[];
     reason?: string; // Recommendation reason
     playtime?: number; // Playtime in minutes (optional)
@@ -19,13 +25,14 @@ export interface ShareGame {
 export interface ShareList {
     id: string; // uuid
     title: string;
+    type: 'game' | 'manga';
     createdAt: number;
     games: ShareGame[];
 }
 
 interface ShareStore {
     lists: ShareList[];
-    createList: (title: string) => void;
+    createList: (title: string, type?: 'game' | 'manga') => void;
     deleteList: (id: string) => void;
     updateListTitle: (id: string, title: string) => void;
     addGame: (listId: string, game: ShareGame) => void;
@@ -44,18 +51,20 @@ export const useShareStore = create<ShareStore>()(
                         ...state.lists,
                         {
                             ...importedList,
+                            type: importedList.type || 'game', // Backwards compat
                             id: uuidv4(), // Regenerate ID to avoid collisions
                             createdAt: Date.now()
                         }
                     ]
                 })),
-            createList: (title) =>
+            createList: (title, type = 'game') =>
                 set((state) => ({
                     lists: [
                         ...state.lists,
                         {
                             id: uuidv4(),
                             title,
+                            type,
                             createdAt: Date.now(),
                             games: []
                         }

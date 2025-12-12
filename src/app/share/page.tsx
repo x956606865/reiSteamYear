@@ -1,6 +1,6 @@
 'use client';
 
-import { Title, Group, Button, Grid, Card, Text, ActionIcon, Menu, Modal, TextInput } from '@mantine/core';
+import { Title, Group, Button, Grid, Card, Text, ActionIcon, Menu, Modal, TextInput, SegmentedControl, Badge, Stack } from '@mantine/core';
 import { useShareStore } from '@/store/useShareStore';
 import { IconPlus, IconDots, IconTrash, IconPencil } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
@@ -14,12 +14,14 @@ export default function ShareDictionary() {
     const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false);
     const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
     const [newListTitle, setNewListTitle] = useState('');
+    const [newListType, setNewListType] = useState<'game' | 'manga'>('game');
     const [editingList, setEditingList] = useState<{ id: string, title: string } | null>(null);
 
     const handleCreate = () => {
         if (!newListTitle.trim()) return;
-        createList(newListTitle);
+        createList(newListTitle, newListType);
         setNewListTitle('');
+        setNewListType('game');
         closeCreate();
     };
 
@@ -69,7 +71,12 @@ export default function ShareDictionary() {
                                 onClick={() => router.push(`/share/${list.id}`)}
                             >
                                 <Group justify="space-between" mb="xs">
-                                    <Text fw={500} lineClamp={1} title={list.title}>{list.title}</Text>
+                                    <Group gap="xs">
+                                        <Text fw={500} lineClamp={1} title={list.title} style={{ maxWidth: 160 }}>{list.title}</Text>
+                                        <Badge size="xs" variant="light" color={list.type === 'manga' ? 'pink' : 'blue'}>
+                                            {list.type === 'manga' ? '漫画' : '游戏'}
+                                        </Badge>
+                                    </Group>
                                     <Menu position="bottom-end" withinPortal>
                                         <Menu.Target>
                                             <ActionIcon variant="subtle" color="gray" onClick={(e) => e.stopPropagation()}>
@@ -94,7 +101,7 @@ export default function ShareDictionary() {
                                     </Menu>
                                 </Group>
                                 <Text size="sm" c="dimmed">
-                                    {list.games.length} 个游戏
+                                    {list.games.length} 个内容
                                 </Text>
                                 <Text size="xs" c="dimmed" mt="auto" pt="sm">
                                     创建于 {new Date(list.createdAt).toLocaleDateString()}
@@ -107,15 +114,28 @@ export default function ShareDictionary() {
 
             {/* Create Modal */}
             <Modal opened={createOpened} onClose={closeCreate} title="新建安利列表">
-                <TextInput
-                    label="列表名称"
-                    placeholder="例如：2024必玩神作"
-                    value={newListTitle}
-                    onChange={(e) => setNewListTitle(e.currentTarget.value)}
-                    data-autofocus
-                    mb="md"
-                />
-                <Group justify="flex-end">
+                <Stack>
+                    <TextInput
+                        label="列表名称"
+                        placeholder="例如：2024必看漫画"
+                        value={newListTitle}
+                        onChange={(e) => setNewListTitle(e.currentTarget.value)}
+                        data-autofocus
+                    />
+
+                    <Stack gap={4}>
+                        <Text size="sm" fw={500}>类型</Text>
+                        <SegmentedControl
+                            value={newListType}
+                            onChange={(val) => setNewListType(val as 'game' | 'manga')}
+                            data={[
+                                { label: '游戏', value: 'game' },
+                                { label: '漫画', value: 'manga' }
+                            ]}
+                        />
+                    </Stack>
+                </Stack>
+                <Group justify="flex-end" mt="md">
                     <Button variant="default" onClick={closeCreate}>取消</Button>
                     <Button onClick={handleCreate}>创建</Button>
                 </Group>

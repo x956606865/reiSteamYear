@@ -1,4 +1,5 @@
-import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button, Progress, NumberInput } from '@mantine/core';
+// ... imports
+import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button, Progress, NumberInput, Divider } from '@mantine/core';
 import { useShareStore, ShareGame } from '@/store/useShareStore';
 import { IconTrash, IconExternalLink, IconEyeOff, IconShare } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
@@ -8,9 +9,10 @@ interface ShareGameCardProps {
     game: ShareGame;
     listId?: string; // Optional in read-only mode
     readOnly?: boolean;
+    listType?: 'game' | 'manga';
 }
 
-export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardProps) {
+export function ShareGameCard({ game, listId, readOnly = false, listType = 'game' }: ShareGameCardProps) {
     const { updateGame, removeGame } = useShareStore();
     const [shareOpened, setShareOpened] = useState(false);
 
@@ -19,13 +21,36 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
     // Local state for playtime
     const [playtimeHours, setPlaytimeHours] = useState<number | string>(game.playtime ? Math.round(game.playtime / 60) : '');
 
+    // Local state for tags
+    const [localTags, setLocalTags] = useState(game.tags || {});
+
     // Local state for smooth sliding optimization
     const [localRatings, setLocalRatings] = useState({
         ratingGameplay: game.ratingGameplay ?? game.rating ?? 80,
         ratingVisuals: game.ratingVisuals ?? game.rating ?? 80,
         ratingStory: game.ratingStory ?? game.rating ?? 80,
         ratingSubjective: game.ratingSubjective ?? game.rating ?? 80,
+        ratingCharacter: game.ratingCharacter ?? game.rating ?? 80,
     });
+
+    // Ratings Configuration
+    const ratingConfig = listType === 'manga' ? [
+        { label: '画风', key: 'ratingVisuals' as const, color: 'pink' },
+        { label: '剧情', key: 'ratingStory' as const, color: 'cyan' },
+        { label: '人设', key: 'ratingCharacter' as const, color: 'grape' }, // Character Focus
+        { label: '主观', key: 'ratingSubjective' as const, color: 'orange' },
+    ] : [
+        { label: '游戏性', key: 'ratingGameplay' as const, color: 'blue' },
+        { label: '音画', key: 'ratingVisuals' as const, color: 'pink' },
+        { label: '剧情', key: 'ratingStory' as const, color: 'cyan' },
+        { label: '主观', key: 'ratingSubjective' as const, color: 'orange' },
+    ];
+
+    const mangaTags = [
+        { label: '百合度', key: 'yuri' as const, color: 'red.4' },
+        { label: '糖度', key: 'sweetness' as const, color: 'pink.4' },
+        { label: '刀度', key: 'angst' as const, color: 'dark.4' },
+    ];
 
     // Sync local state when external game changes
     useEffect(() => {
@@ -34,8 +59,10 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
             ratingVisuals: game.ratingVisuals ?? game.rating ?? 80,
             ratingStory: game.ratingStory ?? game.rating ?? 80,
             ratingSubjective: game.ratingSubjective ?? game.rating ?? 80,
+            ratingCharacter: game.ratingCharacter ?? game.rating ?? 80,
         });
-    }, [game.rating, game.ratingGameplay, game.ratingVisuals, game.ratingStory, game.ratingSubjective]);
+        setLocalTags(game.tags || {});
+    }, [game, listType]);
 
     // Sync reason only on blur to avoid too many writes
     const handleReasonBlur = () => {
@@ -61,7 +88,7 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
         }
     };
 
-    const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.id}/header.jpg`;
+    const imageUrl = game.coverUrl || `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.id}/header.jpg`;
 
     // Helper to calculate average and update store
     const handleRatingChangeEnd = (key: string, value: number) => {
@@ -70,11 +97,11 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
         const updatedRatings = { ...localRatings, [key]: value };
 
         const skipped = game.skippedRatings || [];
-        const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
-        const active = allKeys.filter(k => !skipped.includes(k));
+        const activeConfig = ratingConfig.filter(c => !skipped.includes(c.key));
+
         // @ts-ignore
-        const sum = active.reduce((acc, k) => acc + updatedRatings[k], 0);
-        const avg = active.length ? Math.round(sum / active.length) : 0;
+        const sum = activeConfig.reduce((acc, c) => acc + updatedRatings[c.key], 0);
+        const avg = activeConfig.length ? Math.round(sum / activeConfig.length) : 0;
 
         updateGame(listId, {
             id: game.id,
@@ -82,6 +109,13 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
             rating: avg
         });
     };
+
+    const handleTagChangeEnd = (key: string, value: number) => {
+        if (readOnly || !listId) return;
+        const newTags = { ...localTags, [key]: value };
+        setLocalTags(newTags); // Optimistic
+        updateGame(listId, { id: game.id, tags: newTags });
+    }
 
     const toggleSkip = (key: string) => {
         if (readOnly || !listId) return;
@@ -93,12 +127,11 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
             : [...currentSkipped, key];
 
         // Recalc average
-        const allKeys = ['ratingGameplay', 'ratingVisuals', 'ratingStory', 'ratingSubjective'];
-        const active = allKeys.filter(k => !newSkipped.includes(k));
+        const activeConfig = ratingConfig.filter(c => !newSkipped.includes(c.key));
         // Use current local ratings
         // @ts-ignore
-        const sum = active.reduce((acc, k) => acc + localRatings[k], 0);
-        const avg = active.length ? Math.round(sum / active.length) : 0;
+        const sum = activeConfig.reduce((acc, c) => acc + localRatings[c.key], 0);
+        const avg = activeConfig.length ? Math.round(sum / activeConfig.length) : 0;
 
         updateGame(listId, {
             id: game.id,
@@ -112,7 +145,9 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
             <Card.Section>
                 <Image
                     src={imageUrl}
-                    h={120}
+                    h={listType === 'manga' ? 240 : 120} // Taller for manga covers (usually vertical)
+                    fit="cover" // Center/Cover
+                    // objectPosition="top" // Usually faces are at top
                     alt={game.name}
                     fallbackSrc="https://placehold.co/600x400?text=No+Image"
                 />
@@ -120,29 +155,31 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
 
             <Group justify="space-between" mt="md" mb="xs">
                 <Text fw={600} lineClamp={1} title={game.name} style={{ flex: 1 }}>{game.name}</Text>
-                <Tooltip label="在 Steam 查看">
-                    <ActionIcon
-                        component="a"
-                        href={`https://store.steampowered.com/app/${game.id}`}
-                        target="_blank"
-                        variant="subtle"
-                        color="gray"
-                        size="sm"
-                    >
-                        <IconExternalLink size={16} />
-                    </ActionIcon>
-                </Tooltip>
+                <Group gap={4}>
+                    <Tooltip label={listType === 'manga' ? "在 Bangumi 查看" : "在 Steam 查看"}>
+                        <ActionIcon
+                            component="a"
+                            href={listType === 'manga' ? `https://bgm.tv/subject/${game.id}` : `https://store.steampowered.com/app/${game.id}`}
+                            target="_blank"
+                            variant="subtle"
+                            color="gray"
+                            size="sm"
+                        >
+                            <IconExternalLink size={16} />
+                        </ActionIcon>
+                    </Tooltip>
 
-                <Tooltip label="分享单张卡片">
-                    <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="sm"
-                        onClick={() => setShareOpened(true)}
-                    >
-                        <IconShare size={16} />
-                    </ActionIcon>
-                </Tooltip>
+                    <Tooltip label="分享单张卡片">
+                        <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size="sm"
+                            onClick={() => setShareOpened(true)}
+                        >
+                            <IconShare size={16} />
+                        </ActionIcon>
+                    </Tooltip>
+                </Group>
             </Group>
 
             <GameShareModal
@@ -159,13 +196,13 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
                             gameplay: localRatings.ratingGameplay,
                             visuals: localRatings.ratingVisuals,
                             story: localRatings.ratingStory,
-                            subjective: localRatings.ratingSubjective
+                            subjective: localRatings.ratingSubjective,
+                            // TODO: Pass character rating to Share Modal if we update modal too
                         },
                         skippedRatings: game.skippedRatings,
                         playtime: game.playtime // Pass minutes directly
                     },
-                    listName: "游戏鉴赏" // Or pass list title if available? listId is not title.
-                    // Ideally we should pass list title, but keeping it simple for now or fetch from store if critical.
+                    listName: "安利详情"
                 }}
             />
 
@@ -176,12 +213,7 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
                 </Group>
 
                 {/* Multi-dimensional Sliders */}
-                {[
-                    { label: '游戏性', key: 'ratingGameplay' as const, color: 'blue' },
-                    { label: '音画', key: 'ratingVisuals' as const, color: 'pink' },
-                    { label: '剧情', key: 'ratingStory' as const, color: 'cyan' },
-                    { label: '主观', key: 'ratingSubjective' as const, color: 'orange' },
-                ].map((item) => {
+                {ratingConfig.map((item) => {
                     const val = localRatings[item.key];
                     const isSkipped = game.skippedRatings?.includes(item.key);
                     const canSkip = item.key !== 'ratingSubjective';
@@ -235,6 +267,36 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
                     );
                 })}
 
+                {/* Manga Extra Tags */}
+                {listType === 'manga' && (
+                    <>
+                        <Divider my="xs" label="属性 (0-10)" labelPosition="center" />
+                        {mangaTags.map((tag) => {
+                            // @ts-ignore
+                            const val = localTags[tag.key] ?? 0;
+                            return (
+                                <Group key={tag.key} gap="xs" align="center">
+                                    <Text size="xs" w={45}>{tag.label}</Text>
+                                    <Slider
+                                        style={{ flex: 1 }}
+                                        size="xs"
+                                        color={tag.color}
+                                        value={val}
+                                        min={0}
+                                        max={10} // 0-10 scale for attributes
+                                        step={0.5}
+                                        label={val}
+                                        disabled={readOnly}
+                                        onChange={(v) => setLocalTags(prev => ({ ...prev, [tag.key]: v }))}
+                                        onChangeEnd={(v) => handleTagChangeEnd(tag.key, v)}
+                                    />
+                                    <Text size="xs" w={28} ta="right">{val}</Text>
+                                </Group>
+                            )
+                        })}
+                    </>
+                )}
+
                 <Textarea
                     placeholder={readOnly ? "无评价" : "写下你的安利理由..."}
                     label="推荐理由"
@@ -251,21 +313,23 @@ export function ShareGameCard({ game, listId, readOnly = false }: ShareGameCardP
                     mt="xs"
                 />
 
-                <Group align="center" gap="xs">
-                    <Text size="sm" fw={700}>游玩时长 (小时)</Text>
-                    <NumberInput
-                        placeholder="可选"
-                        size="xs"
-                        min={0}
-                        allowNegative={false}
-                        value={playtimeHours}
-                        onChange={setPlaytimeHours}
-                        onBlur={handlePlaytimeBlur}
-                        readOnly={readOnly}
-                        variant={readOnly ? "filled" : "default"}
-                        style={{ width: 80 }}
-                    />
-                </Group>
+                {listType === 'game' && (
+                    <Group align="center" gap="xs">
+                        <Text size="sm" fw={700}>游玩时长 (小时)</Text>
+                        <NumberInput
+                            placeholder="可选"
+                            size="xs"
+                            min={0}
+                            allowNegative={false}
+                            value={playtimeHours}
+                            onChange={setPlaytimeHours}
+                            onBlur={handlePlaytimeBlur}
+                            readOnly={readOnly}
+                            variant={readOnly ? "filled" : "default"}
+                            style={{ width: 80 }}
+                        />
+                    </Group>
+                )}
 
                 {!readOnly && (
                     <Group justify="flex-end" mt="xs">

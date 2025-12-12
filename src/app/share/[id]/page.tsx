@@ -1,5 +1,6 @@
 'use client';
 
+// ... imports
 import { Title, Group, Button, Grid, Text, ActionIcon, Modal, TextInput, Stack, LoadingOverlay } from '@mantine/core';
 import { useShareStore, ShareGame } from '@/store/useShareStore';
 import { ShareGameCard } from '@/components/ShareGameCard';
@@ -12,6 +13,7 @@ import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import LZString from 'lz-string';
 import { encodeShareList } from '@/utils/shareData';
+import { searchSubject } from '@/lib/bangumi'; // Import Bangumi search
 
 // Reusing ManualGameSearch component logic would be ideal, but for now implementing a simpler search modal here or extracting if time permits.
 // Let's create a simple search function here for M4.
@@ -77,10 +79,15 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
         if (!searchTerm.trim()) return;
         setSearching(true);
         try {
-            const res = await fetch(`/api/search?term=${encodeURIComponent(searchTerm)}`);
-            const data = await res.json();
-            if (data.items) {
-                setSearchResults(data.items);
+            if (list.type === 'manga') {
+                const results = await searchSubject(searchTerm, 1); // Type 1 = Book/Manga
+                setSearchResults(results);
+            } else {
+                const res = await fetch(`/api/search?term=${encodeURIComponent(searchTerm)}`);
+                const data = await res.json();
+                if (data.items) {
+                    setSearchResults(data.items);
+                }
             }
         } catch (error) {
             console.error(error);
@@ -90,13 +97,26 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
     };
 
     const handleAddGame = (item: any) => {
-        const newGame: ShareGame = {
-            id: item.id,
-            name: item.name,
-            coverUrl: `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`,
-            rating: 80, // Default
-            reason: ''
-        };
+        let newGame: ShareGame;
+
+        if (list.type === 'manga') {
+            newGame = {
+                id: item.id,
+                name: item.name_cn || item.name,
+                coverUrl: item.images?.large || item.images?.medium || item.images?.common || '',
+                rating: 80,
+                reason: ''
+            }
+        } else {
+            newGame = {
+                id: item.id,
+                name: item.name,
+                coverUrl: `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+                rating: 80, // Default
+                reason: ''
+            };
+        }
+
         addGame(id, newGame);
         closeSearch();
         setSearchTerm('');
@@ -154,11 +174,11 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
                 </ActionIcon>
                 <Stack gap={0}>
                     <Title order={2}>{list.title}</Title>
-                    <Text size="sm" c="dimmed">共 {list.games.length} 个游戏</Text>
+                    <Text size="sm" c="dimmed">共 {list.games.length} 个{list.type === 'manga' ? '漫画' : '游戏'}</Text>
                 </Stack>
                 <Group ml="auto">
                     <Button leftSection={<IconPlus size={16} />} onClick={openSearch}>
-                        添加游戏
+                        添加{list.type === 'manga' ? '漫画' : '游戏'}
                     </Button>
                     <Button
                         leftSection={<IconDownload size={16} />}
@@ -182,13 +202,13 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
 
             {list.games.length === 0 ? (
                 <Text c="dimmed" ta="center" py={50}>
-                    列表为空，点击上方“添加游戏”开始安利！
+                    列表为空，点击上方“添加{list.type === 'manga' ? '漫画' : '游戏'}”开始安利！
                 </Text>
             ) : (
                 <Grid>
                     {list.games.map((game) => (
                         <Grid.Col key={game.id} span={{ base: 12, md: 6, lg: 4, xl: 3 }}>
-                            <ShareGameCard listId={list.id} game={game} />
+                            <ShareGameCard listId={list.id} game={game} listType={list.type} />
                         </Grid.Col>
                     ))}
                 </Grid>
@@ -200,14 +220,15 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
             </div>
 
             {/* Search Modal */}
-            <Modal opened={searchOpened} onClose={closeSearch} title="搜索 Steam 游戏" size="lg">
+            <Modal opened={searchOpened} onClose={closeSearch} title={`搜索 ${list.type === 'manga' ? 'Bangumi 漫画' : 'Steam 游戏'}`} size="lg">
                 <Group mb="md">
                     <TextInput
-                        placeholder="输入游戏名称..."
+                        placeholder={list.type === 'manga' ? "输入漫画名称..." : "输入游戏名称..."}
                         style={{ flex: 1 }}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.currentTarget.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        data-autofocus
                     />
                     <Button onClick={handleSearch} loading={searching} leftSection={<IconSearch size={16} />}>
                         搜索
@@ -215,13 +236,22 @@ export default function ShareListDetail({ params }: { params: Promise<{ id: stri
                 </Group>
 
                 <Stack mah={400} style={{ overflowY: 'auto' }}>
-                    {searchResults.map((item) => (
-                        <Group key={item.id} p="xs" style={{ borderBottom: '1px solid var(--mantine-color-dark-4)' }}>
-                            <img src={item.tiny_image} alt={item.name} height={32} />
-                            <Text size="sm" style={{ flex: 1 }}>{item.name}</Text>
-                            <Button size="xs" variant="light" onClick={() => handleAddGame(item)}>添加</Button>
-                        </Group>
-                    ))}
+                    {searchResults.map((item) => {
+                        // Normalize display data
+                        const name = list.type === 'manga' ? (item.name_cn || item.name) : item.name;
+                        const image = list.type === 'manga' ? (item.images?.medium || item.images?.common) : item.tiny_image;
+
+                        return (
+                            <Group key={item.id} p="xs" style={{ borderBottom: '1px solid var(--mantine-color-dark-4)' }}>
+                                {image ?
+                                    <img src={image} alt={name} style={{ height: 48, width: 36, objectFit: 'cover' }} /> :
+                                    <div style={{ height: 48, width: 36, background: '#333' }} />
+                                }
+                                <Text size="sm" style={{ flex: 1 }} lineClamp={2}>{name}</Text>
+                                <Button size="xs" variant="light" onClick={() => handleAddGame(item)}>添加</Button>
+                            </Group>
+                        );
+                    })}
                     {searchResults.length === 0 && !searching && searchTerm && (
                         <Text ta="center" c="dimmed" size="sm">未找到结果</Text>
                     )}
