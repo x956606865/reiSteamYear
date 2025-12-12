@@ -1,9 +1,11 @@
 // ... imports
-import { Card, Image, Text, Group, Badge, Stack, Rating, ActionIcon, Tooltip, Slider, Textarea, Button, Progress, NumberInput, Divider } from '@mantine/core';
+import { ActionIcon, Badge, Box, Button, Card, Divider, Group, Image, NumberInput, Paper, Progress, Rating, Slider, Stack, Text, Textarea, Tooltip } from '@mantine/core';
 import { useShareStore, ShareGame } from '@/store/useShareStore';
-import { IconTrash, IconExternalLink, IconEyeOff, IconShare } from '@tabler/icons-react';
+import { IconTrash, IconExternalLink, IconEyeOff, IconShare, IconEdit } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { GameShareModal } from './GameShareModal';
+import { AttributeManagerModal } from './AttributeManagerModal';
+import { getAttributeColor, getAttributeLabel } from '@/lib/constants';
 
 interface ShareGameCardProps {
     game: ShareGame;
@@ -46,11 +48,7 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
         { label: '主观', key: 'ratingSubjective' as const, color: 'orange' },
     ];
 
-    const mangaTags = [
-        { label: '百合度', key: 'yuri' as const, color: 'red.4' },
-        { label: '糖度', key: 'sweetness' as const, color: 'pink.4' },
-        { label: '刀度', key: 'angst' as const, color: 'grape.6' },
-    ];
+    const [attributeModalOpen, setAttributeModalOpen] = useState(false);
 
     // Sync local state when external game changes
     useEffect(() => {
@@ -109,13 +107,6 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
             rating: avg
         });
     };
-
-    const handleTagChangeEnd = (key: string, value: number) => {
-        if (readOnly || !listId) return;
-        const newTags = { ...localTags, [key]: value };
-        setLocalTags(newTags); // Optimistic
-        updateGame(listId, { id: game.id, tags: newTags });
-    }
 
     const toggleSkip = (key: string) => {
         if (readOnly || !listId) return;
@@ -269,33 +260,44 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
                     );
                 })}
 
-                {/* Manga Extra Tags */}
+                {/* Manga Attributes (Dynamic) */}
                 {listType === 'manga' && (
                     <>
-                        <Divider my="xs" label="属性 (0-10)" labelPosition="center" />
-                        {mangaTags.map((tag) => {
-                            // @ts-ignore
-                            const val = localTags[tag.key] ?? 0;
-                            return (
-                                <Group key={tag.key} gap="xs" align="center">
-                                    <Text size="xs" w={45}>{tag.label}</Text>
-                                    <Slider
-                                        style={{ flex: 1 }}
-                                        size="xs"
-                                        color={tag.color}
-                                        value={val}
-                                        min={0}
-                                        max={10} // 0-10 scale for attributes
-                                        step={0.5}
-                                        label={val}
-                                        disabled={readOnly}
-                                        onChange={(v) => setLocalTags(prev => ({ ...prev, [tag.key]: v }))}
-                                        onChangeEnd={(v) => handleTagChangeEnd(tag.key, v)}
-                                    />
-                                    <Text size="xs" w={28} ta="right">{val}</Text>
-                                </Group>
-                            )
-                        })}
+                        <Divider label="属性标签" labelPosition="left" />
+                        <Group gap="xs">
+                            {game.tags && Object.entries(game.tags).map(([key, value]) => (
+                                <Badge
+                                    key={key}
+                                    size="lg"
+                                    variant="outline"
+                                    color={getAttributeColor(key)}
+                                    style={{ textTransform: 'none' }}
+                                >
+                                    {getAttributeLabel(key)}: {value}
+                                </Badge>
+                            ))}
+                            <Button
+                                variant="default"
+                                size="xs"
+                                radius="xl"
+                                leftSection={<IconEdit size={12} />}
+                                onClick={() => setAttributeModalOpen(true)}
+                                disabled={readOnly}
+                            >
+                                管理属性
+                            </Button>
+                        </Group>
+                        <AttributeManagerModal
+                            opened={attributeModalOpen}
+                            onClose={() => setAttributeModalOpen(false)}
+                            currentTags={game.tags || {}}
+                            onConfirm={(newTags) => {
+                                if (listId) {
+                                    updateGame(listId, { id: game.id, tags: newTags });
+                                    setLocalTags(newTags);
+                                }
+                            }}
+                        />
                     </>
                 )}
 
@@ -315,33 +317,37 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
                     mt="xs"
                 />
 
-                {listType === 'game' && (
-                    <Group align="center" gap="xs">
-                        <Text size="sm" fw={700}>游玩时长 (小时)</Text>
-                        <NumberInput
-                            placeholder="可选"
-                            size="xs"
-                            min={0}
-                            allowNegative={false}
-                            value={playtimeHours}
-                            onChange={setPlaytimeHours}
-                            onBlur={handlePlaytimeBlur}
-                            readOnly={readOnly}
-                            variant={readOnly ? "filled" : "default"}
-                            style={{ width: 80 }}
-                        />
-                    </Group>
-                )}
+                {
+                    listType === 'game' && (
+                        <Group align="center" gap="xs">
+                            <Text size="sm" fw={700}>游玩时长 (小时)</Text>
+                            <NumberInput
+                                placeholder="可选"
+                                size="xs"
+                                min={0}
+                                allowNegative={false}
+                                value={playtimeHours}
+                                onChange={setPlaytimeHours}
+                                onBlur={handlePlaytimeBlur}
+                                readOnly={readOnly}
+                                variant={readOnly ? "filled" : "default"}
+                                style={{ width: 80 }}
+                            />
+                        </Group>
+                    )
+                }
 
-                {!readOnly && (
-                    <Group justify="flex-end" mt="xs">
-                        <Tooltip label="移除游戏">
-                            <ActionIcon variant="light" color="red" onClick={handleDelete} size="sm">
-                                <IconTrash size={16} />
-                            </ActionIcon>
-                        </Tooltip>
-                    </Group>
-                )}
+                {
+                    !readOnly && (
+                        <Group justify="flex-end" mt="xs">
+                            <Tooltip label="移除游戏">
+                                <ActionIcon variant="light" color="red" onClick={handleDelete} size="sm">
+                                    <IconTrash size={16} />
+                                </ActionIcon>
+                            </Tooltip>
+                        </Group>
+                    )
+                }
             </Stack>
         </Card>
     );

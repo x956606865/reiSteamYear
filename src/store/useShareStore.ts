@@ -12,11 +12,7 @@ export interface ShareGame {
     ratingStory?: number;
     ratingSubjective?: number;
     ratingCharacter?: number; // New for Manga
-    tags?: {
-        yuri?: number;
-        sweetness?: number;
-        angst?: number;
-    };
+    tags?: Record<string, number>;
     skippedRatings?: string[];
     reason?: string; // Recommendation reason
     playtime?: number; // Playtime in minutes (optional)

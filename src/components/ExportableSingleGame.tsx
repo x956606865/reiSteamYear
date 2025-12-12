@@ -1,6 +1,7 @@
 import { Card, Image, Text, Group, Badge, Stack, Title, Box, Grid, Progress, Avatar } from '@mantine/core';
 import { IconStarFilled, IconQuote } from '@tabler/icons-react';
 import { forwardRef } from 'react';
+import { getAttributeColor, getAttributeLabel } from '@/lib/constants';
 
 export interface SingleGameExportProps {
     listType?: 'game' | 'manga';
@@ -111,12 +112,9 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
             {listType === 'manga' && game.tags && (
                 <Group gap="xs">
                     {Object.entries(game.tags).map(([key, value]) => {
-                        if (!value) return null;
-                        const labelMap: any = { yuri: '百合', sweetness: '糖度', angst: '刀度' };
-                        const colorMap: any = { yuri: 'red.4', sweetness: 'pink.4', angst: 'grape.6' };
                         return (
-                            <Badge key={key} size="sm" variant="outline" color={colorMap[key] || 'gray'}>
-                                {labelMap[key] || key}: {value}
+                            <Badge key={key} size="sm" variant="outline" color={getAttributeColor(key)}>
+                                {getAttributeLabel(key)}: {value}
                             </Badge>
                         )
                     })}
