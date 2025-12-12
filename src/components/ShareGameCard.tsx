@@ -49,7 +49,7 @@ export function ShareGameCard({ game, listId, readOnly = false, listType = 'game
     const mangaTags = [
         { label: '百合度', key: 'yuri' as const, color: 'red.4' },
         { label: '糖度', key: 'sweetness' as const, color: 'pink.4' },
-        { label: '刀度', key: 'angst' as const, color: 'dark.4' },
+        { label: '刀度', key: 'angst' as const, color: 'grape.6' },
     ];
 
     // Sync local state when external game changes
