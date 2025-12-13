@@ -1,5 +1,5 @@
 
-import { Modal, Button, Text, Progress, Stack, Group, Badge, Card, SimpleGrid, Title, LoadingOverlay, ScrollArea, Loader } from '@mantine/core';
+import { Modal, Button, Text, Progress, Stack, Group, Badge, Card, SimpleGrid, Title, LoadingOverlay, ScrollArea, Loader, Blockquote } from '@mantine/core';
 import { useState, useEffect, useMemo } from 'react';
 import { useAIConfigStore, AIModelClient, AIAnalysisResult } from '@/lib/ai-client';
 import { useGameDetailsQueue, GameDetails } from '@/lib/steam-client';
@@ -170,8 +170,16 @@ export function AIReportModal({ opened, onClose, year, games, reviews }: AIRepor
     // Visualization
     const radarData = useMemo(() => {
         if (!result?.radarChart) return [];
+        const translate: Record<string, string> = {
+            action: '动作',
+            strategy: '策略',
+            story: '剧情',
+            artistic: '艺术',
+            social: '社交',
+            relaxing: '休闲'
+        };
         return Object.entries(result.radarChart).map(([key, value]) => ({
-            subject: key.charAt(0).toUpperCase() + key.slice(1),
+            subject: translate[key] || key,
             A: value,
             fullMark: 100
         }));
@@ -210,7 +218,10 @@ export function AIReportModal({ opened, onClose, year, games, reviews }: AIRepor
                 {step === 'done' && result && (
                     <Stack>
                         <Group justify="space-between">
-                            <Title order={3}>{result.persona}</Title>
+                            <Stack gap={0}>
+                                <Title order={3}>{result.persona}</Title>
+                                {result.annualTitle && <Text c="blue" fw={700} size="xl" variant="gradient" gradient={{ from: 'blue', to: 'cyan', deg: 90 }}>{result.annualTitle}</Text>}
+                            </Stack>
                             <Button size="xs" variant="subtle" color="gray" onClick={() => {
                                 // Clear cache and restart
                                 localStorage.removeItem(`ai-report-${year}`);
@@ -220,11 +231,19 @@ export function AIReportModal({ opened, onClose, year, games, reviews }: AIRepor
                                 重新生成
                             </Button>
                         </Group>
+
+                        {result.creativeReview && (
+                            <Blockquote color="blue" cite="– AI 锐评" mt="xs">
+                                {result.creativeReview}
+                            </Blockquote>
+                        )}
+
                         <Text>{result.summary}</Text>
 
                         <Group>
                             {result.keywords.map(k => <Badge key={k} variant="dot">{k}</Badge>)}
                             <Badge color="pink">{result.mostPlayedGenre}</Badge>
+                            {result.completionistScore !== undefined && <Badge color="yellow">全收集指数: {result.completionistScore}</Badge>}
                         </Group>
 
                         <SimpleGrid cols={2}>

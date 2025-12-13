@@ -27,6 +27,9 @@ export interface AIAnalysisResult {
         relaxing: number;
     };
     mostPlayedGenre: string;
+    annualTitle?: string;
+    completionistScore?: number; // 0-100
+    creativeReview?: string;
     hiddenGem?: string;
 }
 
@@ -121,10 +124,13 @@ Analyze the User's Year in Review data and output a structured JSON report.
 Strictly adhere to this JSON schema:
 {
   "persona": "String (e.g. '硬核战术家', '剧情体验党')",
+  "annualTitle": "String (4个字的创造性年度称号, e.g. '赛博苦行', '像素飞升')",
   "summary": "String (2-3 sentences, emotional and insightful summary)",
   "keywords": ["String", "String", "String", "String", "String"],
   "radarChart": { "action": 0-100, "strategy": 0-100, "story": 0-100, "artistic": 0-100, "social": 0-100, "relaxing": 0-100 },
   "mostPlayedGenre": "String",
+  "completionistScore": "Number (0-100, based on 'beaten' ratio and dedication)",
+  "creativeReview": "String (A witty or deep one-sentence observation about the player's taste)",
   "hiddenGem": "String (Optional, pick a highly rated indie game)"
 }
 IMPORTANT: Output ALL string values in Simplified Chinese (简体中文).
