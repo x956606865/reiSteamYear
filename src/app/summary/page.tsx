@@ -272,6 +272,7 @@ export default function SummaryPage() {
                 year={2024}
                 games={summaryData.allGames}
                 reviews={reviews}
+                user={summaryData?.user}
                 summaryStats={summaryData ? {
                     totalGames: summaryData.totalGames,
                     totalPlaytime: summaryData.totalPlaytime,

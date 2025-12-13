@@ -16,6 +16,7 @@ interface AIReportModalProps {
     year: number;
     games: SteamGame[]; // All games played this year
     reviews: Record<number, any>; // To identify rated games
+    user?: { name: string, image: string };
     summaryStats?: {
         totalGames: number;
         totalPlaytime: number; // minutes
@@ -24,9 +25,11 @@ interface AIReportModalProps {
     };
 }
 
-export function AIReportModal({ opened, onClose, year, games, reviews, summaryStats }: AIReportModalProps) {
+export function AIReportModal({ opened, onClose, year, games, reviews, user, summaryStats }: AIReportModalProps) {
     const aiConfig = useAIConfigStore();
     const [settingsOpen, setSettingsOpen] = useState(false);
+    // ... (existing code) ...
+
 
     // Workflow State
     const [step, setStep] = useState<'idle' | 'fetching' | 'generating' | 'done'>('idle');
@@ -293,7 +296,7 @@ export function AIReportModal({ opened, onClose, year, games, reviews, summarySt
                         ref={exportRef}
                         data={{ ...result, manualStats: { ...stats } }}
                         year={year}
-                        user={{ name: 'User', image: '' }} // TODO: Pass user info if available in parent
+                        user={user || { name: 'User', image: '' }}
                     />
                 )}
             </div>
