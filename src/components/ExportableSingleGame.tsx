@@ -2,7 +2,7 @@ import { Card, Image, Text, Group, Badge, Stack, Title, Box, Grid, Progress, Ava
 import { IconStarFilled, IconQuote } from '@tabler/icons-react';
 import { forwardRef } from 'react';
 import { getAttributeColor, getAttributeLabel } from '@/lib/constants';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, PolarRadiusAxis } from 'recharts';
 
 const CustomTick = ({ payload, x, y, cx, cy, ...props }: any) => {
     const textAnchor = Math.abs(x - cx) < 10 ? 'middle' : x > cx ? 'start' : 'end';
@@ -90,55 +90,69 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
             {/* Sub Ratings */}
             {game.subRatings && (
                 <>
-                    {chartStyle === 'radar' && listType === 'manga' ? (
-                        <Grid gutter="xl" align="center" mt="sm">
-                            <Grid.Col span={6}>
-                                <div style={{ width: '100%', height: 180 }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RadarChart cx="50%" cy="50%" outerRadius="55%" data={[
-                                            { subject: `画风 ${game.subRatings.visuals} #f06595`, A: game.subRatings.visuals, fullMark: 10 },
-                                            { subject: `剧情 ${game.subRatings.story} #15aabf`, A: game.subRatings.story, fullMark: 10 },
-                                            { subject: `人设 ${game.subRatings.character || 0} #cc5de8`, A: game.subRatings.character || 0, fullMark: 10 },
-                                            { subject: `主观 ${game.subRatings.subjective} #ff922b`, A: game.subRatings.subjective, fullMark: 10 },
-                                        ]}>
-                                            <PolarGrid stroke="#ffffff" strokeOpacity={0.2} />
-                                            <PolarAngleAxis
-                                                dataKey="subject"
-                                                tick={<CustomTick />}
-                                            />
-                                            <Radar
-                                                name="Rating"
-                                                dataKey="A"
-                                                stroke="#339af0"
-                                                strokeWidth={3}
-                                                fill="#339af0"
-                                                fillOpacity={0.4}
-                                                isAnimationActive={false}
-                                                dot={{ r: 3, fill: '#339af0', strokeWidth: 0, fillOpacity: 1 }}
-                                            />
-                                        </RadarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </Grid.Col>
-                            <Grid.Col span={6}>
-                                <Stack gap={10}>
-                                    {game.tags && Object.entries(game.tags).map(([key, value]) => (
-                                        <Group gap={8} align="center" wrap="nowrap" key={key}>
-                                            <Text size="sm" c="dimmed" w={48} lineClamp={1}>{getAttributeLabel(key)}</Text>
-                                            <Progress
-                                                value={value * 10} // Convert 0-10 to 0-100
-                                                color={getAttributeColor(key)}
-                                                size="sm"
-                                                radius="xs"
-                                                style={{ flex: 1 }}
-                                            />
-                                            <Text size="sm" w={24} ta="right" fw={700} c="white">{value}</Text>
-                                        </Group>
-                                    ))}
-                                </Stack>
-                            </Grid.Col>
-                        </Grid>
-                    ) : (
+                    {chartStyle === 'radar' && listType === 'manga' ? (() => {
+                        const scores = [
+                            game.subRatings.visuals,
+                            game.subRatings.story,
+                            game.subRatings.character || 0,
+                            game.subRatings.subjective
+                        ];
+                        const minScore = Math.min(...scores);
+                        // Start 10 points below the lowest rounded-down decade, but at least 0
+                        // e.g., min 85 -> 80 -> start at 70
+                        const domainMin = Math.max(0, Math.floor(minScore / 10) * 10 - 10);
+
+                        return (
+                            <Grid gutter="xl" align="center" mt="sm">
+                                <Grid.Col span={6}>
+                                    <div style={{ width: '100%', height: 180 }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RadarChart cx="50%" cy="50%" outerRadius="55%" data={[
+                                                { subject: `画风 ${game.subRatings.visuals} #f06595`, A: game.subRatings.visuals, fullMark: 10 },
+                                                { subject: `剧情 ${game.subRatings.story} #15aabf`, A: game.subRatings.story, fullMark: 10 },
+                                                { subject: `人设 ${game.subRatings.character || 0} #cc5de8`, A: game.subRatings.character || 0, fullMark: 10 },
+                                                { subject: `主观 ${game.subRatings.subjective} #ff922b`, A: game.subRatings.subjective, fullMark: 10 },
+                                            ]}>
+                                                <PolarRadiusAxis domain={[domainMin, 100]} tick={false} axisLine={false} />
+                                                <PolarGrid stroke="#ffffff" strokeOpacity={0.2} />
+                                                <PolarAngleAxis
+                                                    dataKey="subject"
+                                                    tick={<CustomTick />}
+                                                />
+                                                <Radar
+                                                    name="Rating"
+                                                    dataKey="A"
+                                                    stroke="#339af0"
+                                                    strokeWidth={3}
+                                                    fill="#339af0"
+                                                    fillOpacity={0.4}
+                                                    isAnimationActive={false}
+                                                    dot={{ r: 3, fill: '#339af0', strokeWidth: 0, fillOpacity: 1 }}
+                                                />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </Grid.Col>
+                                <Grid.Col span={6}>
+                                    <Stack gap={10}>
+                                        {game.tags && Object.entries(game.tags).map(([key, value]) => (
+                                            <Group gap={8} align="center" wrap="nowrap" key={key}>
+                                                <Text size="sm" c="dimmed" w={48} lineClamp={1}>{getAttributeLabel(key)}</Text>
+                                                <Progress
+                                                    value={value * 10} // Convert 0-10 to 0-100
+                                                    color={getAttributeColor(key)}
+                                                    size="sm"
+                                                    radius="xs"
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <Text size="sm" w={24} ta="right" fw={700} c="white">{value}</Text>
+                                            </Group>
+                                        ))}
+                                    </Stack>
+                                </Grid.Col>
+                            </Grid>
+                        );
+                    })() : (
                         <>
                             <Grid gutter={listType === 'manga' ? "xs" : "md"}>
                                 {(listType === 'manga' ? [
