@@ -1,6 +1,6 @@
 
 import { Modal, Button, Text, Progress, Stack, Group, Badge, Card, SimpleGrid, Title, LoadingOverlay, ScrollArea, Loader, Blockquote, RingProgress, Tooltip, ActionIcon, List, Divider, Paper, Popover, Timeline, Portal } from '@mantine/core';
-import { IconHistory, IconRefresh, IconArrowRight, IconTrash, IconDownload, IconX } from '@tabler/icons-react';
+import { IconHistory, IconRefresh, IconArrowRight, IconTrash, IconDownload, IconX, IconSettings } from '@tabler/icons-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAIConfigStore, AIModelClient, AIAnalysisResult } from '@/lib/ai-client';
 import { useGameDetailsQueue, GameDetails } from '@/lib/steam-client';
@@ -383,6 +383,11 @@ export function AIReportModal({ opened, onClose, year, games, reviews, user, sum
                                         }}>
                                             重新生成
                                         </Button>
+                                        <Tooltip label="AI 设置">
+                                            <ActionIcon variant="light" color="gray" onClick={() => setSettingsOpen(true)}>
+                                                <IconSettings size={16} />
+                                            </ActionIcon>
+                                        </Tooltip>
                                     </Group>
                                 </Group>
 
