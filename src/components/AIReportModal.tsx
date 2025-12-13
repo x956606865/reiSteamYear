@@ -16,9 +16,15 @@ interface AIReportModalProps {
     year: number;
     games: SteamGame[]; // All games played this year
     reviews: Record<number, any>; // To identify rated games
+    summaryStats?: {
+        totalGames: number;
+        totalPlaytime: number; // minutes
+        completionRate: number;
+        topGame?: { name: string, rating: number };
+    };
 }
 
-export function AIReportModal({ opened, onClose, year, games, reviews }: AIReportModalProps) {
+export function AIReportModal({ opened, onClose, year, games, reviews, summaryStats }: AIReportModalProps) {
     const aiConfig = useAIConfigStore();
     const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -66,12 +72,49 @@ export function AIReportModal({ opened, onClose, year, games, reviews }: AIRepor
             hours: Math.round(g.playtime_forever / 60)
         }));
 
+        // Additional Manual Stats (Prefer props if available)
+        let totalHours = 0;
+        let completionRate = 0;
+        let topGameName = '';
+
+        if (summaryStats) {
+            totalHours = Math.round(summaryStats.totalPlaytime / 60);
+            completionRate = summaryStats.completionRate;
+            topGameName = summaryStats.topGame?.name || '';
+        } else {
+            // Fallback calculation
+            totalHours = Math.round(games.reduce((acc, g) => acc + g.playtime_forever, 0) / 60);
+            let beatenCount = 0;
+            let topGame = { name: '', rating: 0 };
+
+            Object.values(reviews).forEach((r: any) => {
+                if (r.status === 'beaten' || r.status === 'completed') beatenCount++;
+            });
+
+            games.forEach(g => {
+                const r = reviews[g.appid];
+                if (r && r.rating > topGame.rating) {
+                    topGame = { name: g.name, rating: r.rating };
+                }
+            });
+            completionRate = totalGames > 0 ? Math.round((beatenCount / totalGames) * 100) : 0;
+            topGameName = topGame.name;
+        }
+
         return {
             tier1Ids: t1Array,
             tier2List: t2List,
-            stats: { totalGames, shortGames, longGames, medianPlaytime: Math.round(medianPlaytime / 60) }
+            stats: {
+                totalGames,
+                shortGames,
+                longGames,
+                medianPlaytime: Math.round(medianPlaytime / 60),
+                totalHours,
+                completionRate,
+                topGameName
+            }
         };
-    }, [games, reviews]);
+    }, [games, reviews, summaryStats]);
 
     // 2. Fetch Queue (Only runs when step === 'fetching')
     const { details, progress, isFetching } = useGameDetailsQueue(tier1Ids, step === 'fetching');
@@ -248,7 +291,7 @@ export function AIReportModal({ opened, onClose, year, games, reviews }: AIRepor
                 {result && (
                     <ExportableAIReport
                         ref={exportRef}
-                        data={result}
+                        data={{ ...result, manualStats: { ...stats } }}
                         year={year}
                         user={{ name: 'User', image: '' }} // TODO: Pass user info if available in parent
                     />

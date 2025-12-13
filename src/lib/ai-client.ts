@@ -43,6 +43,12 @@ export interface AIAnalysisResult {
         gameName: string;
         reason: string;
     };
+    manualStats?: {
+        totalGames: number;
+        totalHours: number;
+        completionRate: number;
+        topGameName: string;
+    };
     mostPlayedGenre: string;
     annualTitle?: string;
     completionistScore?: number; // 0-100

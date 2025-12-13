@@ -272,6 +272,15 @@ export default function SummaryPage() {
                 year={2024}
                 games={summaryData.allGames}
                 reviews={reviews}
+                summaryStats={summaryData ? {
+                    totalGames: summaryData.totalGames,
+                    totalPlaytime: summaryData.totalPlaytime,
+                    completionRate: summaryData.completionRate,
+                    topGame: summaryData.allRatedGames[0] ? {
+                        name: summaryData.allRatedGames[0].name,
+                        rating: summaryData.allRatedGames[0].rating
+                    } : undefined
+                } : undefined}
             />
         </>
     );

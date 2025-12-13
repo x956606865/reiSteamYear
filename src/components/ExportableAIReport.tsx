@@ -156,6 +156,28 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                     {/* Right Column: Stats & Text */}
                     <Grid.Col span={6}>
                         <Stack gap="xl">
+                            {/* Manual Stats Grid */}
+                            {data.manualStats && (
+                                <SimpleGrid cols={2} spacing="xs">
+                                    <Box p="xs" bg="rgba(255,255,255,0.05)" style={{ borderRadius: 8 }}>
+                                        <Text size="xs" c="dimmed">总游戏数</Text>
+                                        <Text fw={900} size="xl">{data.manualStats.totalGames}</Text>
+                                    </Box>
+                                    <Box p="xs" bg="rgba(255,255,255,0.05)" style={{ borderRadius: 8 }}>
+                                        <Text size="xs" c="dimmed">总时长 (小时)</Text>
+                                        <Text fw={900} size="xl">{data.manualStats.totalHours}</Text>
+                                    </Box>
+                                    <Box p="xs" bg="rgba(255,255,255,0.05)" style={{ borderRadius: 8 }}>
+                                        <Text size="xs" c="dimmed">通关率</Text>
+                                        <Text fw={900} size="xl" c="green">{data.manualStats.completionRate}%</Text>
+                                    </Box>
+                                    <Box p="xs" bg="rgba(255,255,255,0.05)" style={{ borderRadius: 8 }}>
+                                        <Text size="xs" c="dimmed">年度最高分</Text>
+                                        <Text fw={900} size="md" lineClamp={1} title={data.manualStats.topGameName}>{data.manualStats.topGameName || '-'}</Text>
+                                    </Box>
+                                </SimpleGrid>
+                            )}
+
                             {/* Summary Text */}
                             <Box>
                                 <Text size="sm" c="dimmed" mb="xs" fw={700}>年度总结</Text>
