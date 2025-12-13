@@ -26,7 +26,12 @@ export async function fetchGameDetails(appid: number): Promise<GameDetails | nul
 }
 
 export function useGameDetailsQueue(appids: number[], enabled: boolean = false) {
-    const [details, setDetails] = useState<Map<number, GameDetails>>(new Map());
+    // Initialize details from localStorage
+    const savedDetailsJson = typeof window !== 'undefined' ? localStorage.getItem('steam-game-details-cache') : null;
+    const initialDetails = savedDetailsJson ? new Map<number, GameDetails>(JSON.parse(savedDetailsJson)) : new Map<number, GameDetails>();
+
+    // State
+    const [details, setDetails] = useState<Map<number, GameDetails>>(initialDetails);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [isFetching, setIsFetching] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -36,41 +41,35 @@ export function useGameDetailsQueue(appids: number[], enabled: boolean = false) 
     useEffect(() => {
         if (!enabled || appids.length === 0) return;
 
-        // Reset state on new start
         setIsFetching(true);
+        // We do NOT reset details here, we keep accumulating/using cached
         setProgress({ current: 0, total: appids.length });
         setError(null);
         abortControllerRef.current = new AbortController();
 
         const processQueue = async () => {
-            const newDetails = new Map(details); // Start with existing cache if any (optional, or clear?)
-            // We'll keep existing details to avoid refetching if user toggles? 
-            // Better: Check if we have it already.
+            const currentDetails = new Map(details); // Snapshot current state
 
             for (let i = 0; i < appids.length; i++) {
                 if (abortControllerRef.current?.signal.aborted) break;
-
                 const appid = appids[i];
 
-                // update progress
                 setProgress({ current: i + 1, total: appids.length });
 
-                // Skip if already loaded
-                if (newDetails.has(appid)) continue;
+                // Skip if already in memory
+                if (currentDetails.has(appid)) continue;
 
                 const data = await fetchGameDetails(appid);
                 if (data) {
-                    newDetails.set(appid, data);
-                    setDetails(new Map(newDetails)); // Trigger update
+                    currentDetails.set(appid, data);
+                    setDetails(new Map(currentDetails)); // Update UI
+                    // Update LocalStorage
+                    localStorage.setItem('steam-game-details-cache', JSON.stringify(Array.from(currentDetails.entries())));
                 }
 
                 // Wait 1s (Rate Limit Protection)
-                // We wait even for failed/cached to keep cadence smooth, or only wait if we actually fetched?
-                // To be safe, wait if we fetched.
-                // But simplified: wait 800ms-1000ms always to be safe.
                 await new Promise(r => setTimeout(r, 1000));
             }
-
             setIsFetching(false);
         };
 

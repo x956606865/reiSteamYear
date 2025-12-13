@@ -11,6 +11,7 @@ export interface AIConfig {
     apiKey: string;
     baseUrl?: string; // For Custom
     model: string;
+    availableModels: string[];
 }
 
 export interface AIAnalysisResult {
@@ -43,6 +44,7 @@ export const useAIConfigStore = create<AIConfigStore>()(
             apiKey: '',
             baseUrl: '',
             model: 'gpt-4o',
+            availableModels: [],
             setConfig: (config) => set((state) => ({ ...state, ...config })),
             isConfigured: () => !!get().apiKey && get().apiKey.length > 5,
         }),
@@ -118,13 +120,14 @@ You are a video game data analyst.
 Analyze the User's Year in Review data and output a structured JSON report.
 Strictly adhere to this JSON schema:
 {
-  "persona": "String (e.g. 'Hardcore Tactician')",
+  "persona": "String (e.g. '硬核战术家', '剧情体验党')",
   "summary": "String (2-3 sentences, emotional and insightful summary)",
   "keywords": ["String", "String", "String", "String", "String"],
   "radarChart": { "action": 0-100, "strategy": 0-100, "story": 0-100, "artistic": 0-100, "social": 0-100, "relaxing": 0-100 },
   "mostPlayedGenre": "String",
   "hiddenGem": "String (Optional, pick a highly rated indie game)"
 }
+IMPORTANT: Output ALL string values in Simplified Chinese (简体中文).
 Do not output markdown code blocks. Output ONLY raw JSON.
 `;
 

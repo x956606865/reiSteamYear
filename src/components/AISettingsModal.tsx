@@ -10,7 +10,7 @@ interface AISettingsModalProps {
 }
 
 export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsModalProps) {
-    const { provider, apiKey, baseUrl, model, setConfig } = useAIConfigStore();
+    const { provider, apiKey, baseUrl, model, availableModels, setConfig } = useAIConfigStore();
 
     // Local state for form to avoid saving invalid config directly to store?
     // Actually, persisting to store immediately is fine if we validate on "Save".
@@ -19,18 +19,21 @@ export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsMo
         provider,
         apiKey,
         baseUrl,
-        model
+        model,
+        availableModels
     });
 
     const [isTesting, setIsTesting] = useState(false);
-    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    // remove local availableModels state as it's part of config now
+    // const [availableModels, setAvailableModels] = useState<string[]>([]);
 
+    // Sync store to local on open
     // Sync store to local on open
     useEffect(() => {
         if (opened) {
-            setLocalConfig({ provider, apiKey, baseUrl, model });
+            setLocalConfig({ provider, apiKey, baseUrl, model, availableModels });
         }
-    }, [opened, provider, apiKey, baseUrl, model]);
+    }, [opened, provider, apiKey, baseUrl, model, availableModels]);
 
     const handleTestConnection = async () => {
         setIsTesting(true);
@@ -44,14 +47,15 @@ export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsMo
             if (localConfig.provider === 'google') {
                 // Skip listing for verified Google key for now as endpoint differs, assume success if key non-empty
                 alert('Google API Key saved (Verification skipped)');
-                setAvailableModels(['gemini-1.5-flash', 'gemini-1.5-pro']);
+                const defaultGoogle = ['gemini-1.5-flash', 'gemini-1.5-pro'];
+                setLocalConfig(prev => ({ ...prev, availableModels: defaultGoogle }));
             } else {
                 const models = await client.getModels();
-                setAvailableModels(models);
+                setLocalConfig(prev => ({ ...prev, availableModels: models }));
                 alert('Connection verified! Select a model.');
             }
         } catch (e: any) {
-            alert(e.message || 'Connection failed');
+            alert(e.message || '连接失败');
         } finally {
             setIsTesting(false);
         }
@@ -59,7 +63,7 @@ export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsMo
 
     const handleSave = () => {
         if (!localConfig.apiKey) {
-            alert('API Key is required');
+            alert('API Key 是必填项');
             return;
         }
         setConfig(localConfig);
@@ -77,14 +81,14 @@ export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsMo
     };
 
     return (
-        <Modal opened={opened} onClose={onClose} title="AI Provider Settings" centered>
+        <Modal opened={opened} onClose={onClose} title="AI 设置" centered>
             <Stack>
                 <Select
-                    label="Provider"
+                    label="服务提供商"
                     data={[
-                        { value: 'openai', label: 'OpenAI (Official)' },
+                        { value: 'openai', label: 'OpenAI (官方)' },
                         { value: 'google', label: 'Google Gemini' },
-                        { value: 'custom', label: 'Custom SDK / Proxy' }
+                        { value: 'custom', label: 'Custom (自定义/中转)' }
                     ]}
                     value={localConfig.provider}
                     onChange={(v: any) => setLocalConfig({ ...localConfig, provider: v, model: '' })}
@@ -92,17 +96,17 @@ export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsMo
 
                 {localConfig.provider !== 'custom' && (
                     <Text size="xs" c="dimmed">
-                        Get your API Key from <Anchor href={getHelpLink()} target="_blank">here</Anchor>.
+                        从 <Anchor href={getHelpLink()} target="_blank">这里</Anchor> 获取你的 API Key。
                     </Text>
                 )}
 
                 {localConfig.provider === 'custom' && (
                     <TextInput
-                        label="Base URL"
+                        label="Base URL (接口地址)"
                         placeholder="https://api.deepseek.com/v1"
                         value={localConfig.baseUrl || ''}
                         onChange={(e) => setLocalConfig({ ...localConfig, baseUrl: e.currentTarget.value })}
-                        description="Endpoint base URL (should end with /v1 usually)"
+                        description="API 接口地址 (通常以 /v1 结尾)"
                     />
                 )}
 
@@ -115,33 +119,33 @@ export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsMo
 
                 <Group justify="right">
                     <Button variant="light" size="xs" loading={isTesting} onClick={handleTestConnection}>
-                        Test Connection & List Models
+                        测试连接并获取模型
                     </Button>
                 </Group>
 
-                {availableModels.length > 0 && (
+                {localConfig.availableModels && localConfig.availableModels.length > 0 && (
                     <Select
-                        label="Select Model"
-                        data={availableModels}
+                        label="选择模型"
+                        data={localConfig.availableModels}
                         value={localConfig.model}
                         onChange={(v) => setLocalConfig({ ...localConfig, model: v || '' })}
                         searchable
                     />
                 )}
-                {localConfig.provider === 'google' && availableModels.length === 0 && (
+                {localConfig.provider === 'google' && (!localConfig.availableModels || localConfig.availableModels.length === 0) && (
                     // Fallback manual input or default list for Google if test skipped
                     <Select
-                        label="Model"
+                        label="模型"
                         data={['gemini-1.5-flash', 'gemini-1.5-pro']}
                         value={localConfig.model}
                         onChange={(v) => setLocalConfig({ ...localConfig, model: v || '' })}
                     />
                 )}
 
-                {localConfig.provider === 'openai' && availableModels.length === 0 && (
+                {localConfig.provider === 'openai' && (!localConfig.availableModels || localConfig.availableModels.length === 0) && (
                     // Fallback if user didn't test but wants to save
                     <TextInput
-                        label="Model Name (Manual)"
+                        label="模型名称 (手动输入)"
                         value={localConfig.model}
                         onChange={(e) => setLocalConfig({ ...localConfig, model: e.currentTarget.value })}
                         placeholder="gpt-4o"
@@ -149,11 +153,11 @@ export function AISettingsModal({ opened, onClose, onSaveSuccess }: AISettingsMo
                 )}
 
                 <Text size="xs" c="dimmed" mt="md">
-                    Note: API Key is stored locally in your browser. We never see it.
+                    注意: API Key 仅存储在你的本地浏览器中，我们无法获取。
                 </Text>
 
                 <Group justify="right" mt="md">
-                    <Button onClick={handleSave}>Save Settings</Button>
+                    <Button onClick={handleSave}>保存设置</Button>
                 </Group>
             </Stack>
         </Modal>
