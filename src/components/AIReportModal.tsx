@@ -1,6 +1,6 @@
 
 import { Modal, Button, Text, Progress, Stack, Group, Badge, Card, SimpleGrid, Title, LoadingOverlay, ScrollArea, Loader, Blockquote, RingProgress, Tooltip, ActionIcon, List, Divider, Paper, Popover, Timeline, Portal } from '@mantine/core';
-import { IconHistory, IconRefresh, IconArrowRight, IconTrash, IconDownload } from '@tabler/icons-react';
+import { IconHistory, IconRefresh, IconArrowRight, IconTrash, IconDownload, IconX } from '@tabler/icons-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAIConfigStore, AIModelClient, AIAnalysisResult } from '@/lib/ai-client';
 import { useGameDetailsQueue, GameDetails } from '@/lib/steam-client';
@@ -301,38 +301,13 @@ export function AIReportModal({ opened, onClose, year, games, reviews, user, sum
                 )}
             </div>
 
-            <Modal opened={opened} onClose={onClose} size="xl" centered>
-                <Group>
-                    <Text fw={700}>AI 年度游戏报告 {year}</Text>
-                    <Group gap="xs">
-                        {result && (
-                            <Tooltip label="保存为图片">
-                                <ActionIcon variant="light" color="blue" onClick={handleExport} loading={isExporting}>
-                                    <IconDownload size={16} />
-                                </ActionIcon>
-                            </Tooltip>
-                        )}
-                        {history.length > 0 && (
-                            <Popover position="bottom" withArrow shadow="md">
-                                <Popover.Target>
-                                    <ActionIcon variant="subtle" color="gray"><IconHistory size={16} /></ActionIcon>
-                                </Popover.Target>
-                                <Popover.Dropdown>
-                                    <Text size="xs" fw={700} mb="xs">历史记录 (本地)</Text>
-                                    <Stack gap="xs">
-                                        {history.map((h, i) => (
-                                            <Button key={i} variant="subtle" size="compact-xs" fullWidth justify="start" onClick={() => setResult(h.data)}>
-                                                {new Date(h.date).toLocaleString()}
-                                            </Button>
-                                        ))}
-                                        <Divider />
-                                        <Button variant="light" color="red" size="compact-xs" onClick={clearHistory} leftSection={<IconTrash size={12} />}>清空历史</Button>
-                                    </Stack>
-                                </Popover.Dropdown>
-                            </Popover>
-                        )}
-                    </Group>
-                </Group>
+            <Modal
+                opened={opened}
+                onClose={onClose}
+                size="xl"
+                centered
+                title={<Text fw={700}>AI 年度游戏报告 {year}</Text>}
+            >
 
                 {step === 'idle' && (
                     <Stack>
@@ -342,133 +317,173 @@ export function AIReportModal({ opened, onClose, year, games, reviews, user, sum
                             <Button onClick={startProcess}>开始生成</Button>
                         </Group>
                     </Stack>
-                )}
+                )
+                }
 
-                {step === 'fetching' && (
-                    <Stack>
-                        <Text size="sm">正在获取游戏元数据... ({progress.current}/{progress.total})</Text>
-                        <Progress value={(progress.current / progress.total) * 100} animated />
-                        <Text size="xs" c="dimmed">为了遵守 Steam API 限制，我们需要按顺序获取数据。</Text>
-                    </Stack>
-                )}
-
-                {step === 'generating' && (
-                    <Stack align="center" py="xl">
-                        <Loader size="xl" type="dots" />
-                        <Text fw={700} mt="md">AI 正在分析你的游戏基因...</Text>
-                        <Text size="sm" c="dimmed">这可能需要几十秒，请耐心等待</Text>
-                    </Stack>
-                )}
-
-                {step === 'done' && result && (
-                    <ScrollArea h={600} type="auto" offsetScrollbars>
-                        <Stack gap="lg" p="md">
-                            <Group justify="space-between" align="start">
-                                <Stack gap={0}>
-                                    <Title order={2}>{result.persona}</Title>
-                                    {result.annualTitle && <Text c="blue" fw={900} size="xl" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 45 }}>{result.annualTitle}</Text>}
-                                </Stack>
-                                <Button size="xs" variant="outline" leftSection={<IconRefresh size={14} />} onClick={() => {
-                                    setStep('fetching');
-                                }}>
-                                    重新生成
-                                </Button>
-                            </Group>
-
-                            {result.creativeReview && (
-                                <Blockquote color="violet" cite="– AI 锐评" iconSize={32}>
-                                    {result.creativeReview}
-                                </Blockquote>
-                            )}
-
-                            <Text size="lg">{result.summary}</Text>
-
-                            <Group>
-                                {result.keywords.map(k => <Badge key={k} size="lg" variant="dot">{k}</Badge>)}
-                                <Badge size="lg" color="pink">{result.mostPlayedGenre}</Badge>
-                                {result.completionistScore !== undefined && <Badge size="lg" color="yellow">全收集指数: {result.completionistScore}</Badge>}
-                            </Group>
-
-                            {/* Main Stats Grid */}
-                            <SimpleGrid cols={2} spacing="lg">
-                                {/* Left: Radar & Emotions */}
-                                <Stack>
-                                    <Card withBorder padding="md" radius="md">
-                                        <Text fw={700} mb="sm" ta="center">游戏基因 (Radar)</Text>
-                                        <div style={{ height: 250, width: '100%' }}>
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                                                    <PolarGrid />
-                                                    <PolarAngleAxis dataKey="subject" />
-                                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
-                                                    <Radar name="Stats" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                                                </RadarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </Card>
-
-                                    {/* Emotional Palette */}
-                                    {result.emotionalPalette && (
-                                        <Card withBorder padding="md" radius="md">
-                                            <Text fw={700} mb="sm">情绪色谱</Text>
-                                            <Stack gap="xs">
-                                                {result.emotionalPalette.map((e, i) => (
-                                                    <Group key={i} justify="space-between">
-                                                        <Text size="sm">{e.emotion}</Text>
-                                                        <Progress value={e.percentage} w={150} color={['red', 'blue', 'green', 'orange', 'grape'][i % 5]} size="lg" label={`${e.percentage}% `} />
-                                                    </Group>
-                                                ))}
-                                            </Stack>
-                                        </Card>
-                                    )}
-                                </Stack>
-
-                                {/* Right: RPG Stats & Highlights */}
-                                <Stack>
-                                    {result.rpgStats && (
-                                        <Card withBorder padding="md" radius="md">
-                                            <Text fw={700} mb="md">RPG 角色面板</Text>
-                                            <SimpleGrid cols={2}>
-                                                {rpgStatsData.map(stat => (
-                                                    <Tooltip key={stat.label} label={stat.desc} withArrow>
-                                                        <Paper withBorder p="xs" radius="sm">
-                                                            <Group justify="space-between" mb={4}>
-                                                                <Text size="xs" c="dimmed" fw={700}>{stat.label}</Text>
-                                                                <Text fw={900} c="blue">{stat.value}</Text>
-                                                            </Group>
-                                                            <Progress value={stat.value} size="xs" />
-                                                        </Paper>
-                                                    </Tooltip>
-                                                ))}
-                                            </SimpleGrid>
-                                        </Card>
-                                    )}
-
-                                    {result.backlogSuggestion && (
-                                        <Card withBorder padding="md" radius="md" style={{ borderColor: '#fa5252' }}>
-                                            <Group mb="xs">
-                                                <Text fw={700} c="red">💔 沧海遗珠</Text>
-                                                <Badge color="red" variant="light">劝回坑</Badge>
-                                            </Group>
-                                            <Text fw={700} size="lg">{result.backlogSuggestion.gameName}</Text>
-                                            <Text size="sm" mt="xs">{result.backlogSuggestion.reason}</Text>
-                                        </Card>
-                                    )}
-
-                                    {result.contrastHighlight && (
-                                        <Card withBorder padding="md" radius="md" style={{ borderColor: '#fab005' }}>
-                                            <Group mb="xs">
-                                                <Text fw={700} c="orange">🏷️ 反差萌时刻</Text>
-                                            </Group>
-                                            <Text fw={700} size="lg">{result.contrastHighlight.gameName}</Text>
-                                            <Text size="sm" mt="xs">{result.contrastHighlight.reason}</Text>
-                                        </Card>
-                                    )}
-                                </Stack>
-                            </SimpleGrid>
+                {
+                    step === 'fetching' && (
+                        <Stack>
+                            <Text size="sm">正在获取游戏元数据... ({progress.current}/{progress.total})</Text>
+                            <Progress value={(progress.current / progress.total) * 100} animated />
+                            <Text size="xs" c="dimmed">为了遵守 Steam API 限制，我们需要按顺序获取数据。</Text>
                         </Stack>
-                    </ScrollArea>
-                )}
+                    )
+                }
+
+                {
+                    step === 'generating' && (
+                        <Stack align="center" py="xl">
+                            <Loader size="xl" type="dots" />
+                            <Text fw={700} mt="md">AI 正在分析你的游戏基因...</Text>
+                            <Text size="sm" c="dimmed">这可能需要几十秒，请耐心等待</Text>
+                        </Stack>
+                    )
+                }
+
+                {
+                    step === 'done' && result && (
+                        <ScrollArea h={600} type="auto" offsetScrollbars>
+                            <Stack gap="lg" p="md">
+                                <Group justify="space-between" align="start">
+                                    <Stack gap={0}>
+                                        <Title order={2}>{result.persona}</Title>
+                                        {result.annualTitle && <Text c="blue" fw={900} size="xl" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 45 }}>{result.annualTitle}</Text>}
+                                    </Stack>
+                                    <Group gap="xs">
+                                        <Tooltip label="保存为图片">
+                                            <Button size="xs" variant="light" color="blue" leftSection={<IconDownload size={14} />} onClick={handleExport} loading={isExporting}>
+                                                保存图片
+                                            </Button>
+                                        </Tooltip>
+
+                                        {history.length > 0 && (
+                                            <Popover position="bottom" withArrow shadow="md">
+                                                <Popover.Target>
+                                                    <Button size="xs" variant="subtle" color="gray" leftSection={<IconHistory size={14} />}>
+                                                        历史
+                                                    </Button>
+                                                </Popover.Target>
+                                                <Popover.Dropdown>
+                                                    <Text size="xs" fw={700} mb="xs">历史记录 (本地)</Text>
+                                                    <Stack gap="xs">
+                                                        {history.map((h, i) => (
+                                                            <Button key={i} variant="subtle" size="compact-xs" fullWidth justify="start" onClick={() => setResult(h.data)}>
+                                                                {new Date(h.date).toLocaleString()}
+                                                            </Button>
+                                                        ))}
+                                                        <Divider />
+                                                        <Button variant="light" color="red" size="compact-xs" onClick={clearHistory} leftSection={<IconTrash size={12} />}>清空历史</Button>
+                                                    </Stack>
+                                                </Popover.Dropdown>
+                                            </Popover>
+                                        )}
+
+                                        <Button size="xs" variant="outline" leftSection={<IconRefresh size={14} />} onClick={() => {
+                                            setStep('fetching');
+                                        }}>
+                                            重新生成
+                                        </Button>
+                                    </Group>
+                                </Group>
+
+                                {result.creativeReview && (
+                                    <Blockquote color="violet" cite="– AI 锐评" iconSize={32}>
+                                        {result.creativeReview}
+                                    </Blockquote>
+                                )}
+
+                                <Text size="lg">{result.summary}</Text>
+
+                                <Group>
+                                    {result.keywords.map(k => <Badge key={k} size="lg" variant="dot">{k}</Badge>)}
+                                    <Badge size="lg" color="pink">{result.mostPlayedGenre}</Badge>
+                                    {result.completionistScore !== undefined && <Badge size="lg" color="yellow">全收集指数: {result.completionistScore}</Badge>}
+                                </Group>
+
+                                {/* Main Stats Grid */}
+                                <SimpleGrid cols={2} spacing="lg">
+                                    {/* Left: Radar & Emotions */}
+                                    <Stack>
+                                        <Card withBorder padding="md" radius="md">
+                                            <Text fw={700} mb="sm" ta="center">游戏基因 (Radar)</Text>
+                                            <div style={{ height: 250, width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                                                        <PolarGrid />
+                                                        <PolarAngleAxis dataKey="subject" />
+                                                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
+                                                        <Radar name="Stats" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                                                    </RadarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </Card>
+
+                                        {/* Emotional Palette */}
+                                        {result.emotionalPalette && (
+                                            <Card withBorder padding="md" radius="md">
+                                                <Text fw={700} mb="sm">情绪色谱</Text>
+                                                <Stack gap="xs">
+                                                    {result.emotionalPalette.map((e, i) => (
+                                                        <Group key={i} justify="space-between">
+                                                            <Text size="sm">{e.emotion}</Text>
+                                                            <Group gap="xs">
+                                                                <Progress value={e.percentage} w={120} color={['red', 'blue', 'green', 'orange', 'grape'][i % 5]} size="lg" />
+                                                                <Text size="xs" c="dimmed" w={35} ta="right">{e.percentage}%</Text>
+                                                            </Group>
+                                                        </Group>
+                                                    ))}
+                                                </Stack>
+                                            </Card>
+                                        )}
+                                    </Stack>
+
+                                    {/* Right: RPG Stats & Highlights */}
+                                    <Stack>
+                                        {result.rpgStats && (
+                                            <Card withBorder padding="md" radius="md">
+                                                <Text fw={700} mb="md">RPG 角色面板</Text>
+                                                <SimpleGrid cols={2}>
+                                                    {rpgStatsData.map(stat => (
+                                                        <Tooltip key={stat.label} label={stat.desc} withArrow>
+                                                            <Paper withBorder p="xs" radius="sm">
+                                                                <Group justify="space-between" mb={4}>
+                                                                    <Text size="xs" c="dimmed" fw={700}>{stat.label}</Text>
+                                                                    <Text fw={900} c="blue">{stat.value}</Text>
+                                                                </Group>
+                                                                <Progress value={stat.value} size="xs" />
+                                                            </Paper>
+                                                        </Tooltip>
+                                                    ))}
+                                                </SimpleGrid>
+                                            </Card>
+                                        )}
+
+                                        {result.backlogSuggestion && (
+                                            <Card withBorder padding="md" radius="md" style={{ borderColor: '#fa5252' }}>
+                                                <Group mb="xs">
+                                                    <Text fw={700} c="red">💔 沧海遗珠</Text>
+                                                    <Badge color="red" variant="light">劝回坑</Badge>
+                                                </Group>
+                                                <Text fw={700} size="lg">{result.backlogSuggestion.gameName}</Text>
+                                                <Text size="sm" mt="xs">{result.backlogSuggestion.reason}</Text>
+                                            </Card>
+                                        )}
+
+                                        {result.contrastHighlight && (
+                                            <Card withBorder padding="md" radius="md" style={{ borderColor: '#fab005' }}>
+                                                <Group mb="xs">
+                                                    <Text fw={700} c="orange">🏷️ 反差萌时刻</Text>
+                                                </Group>
+                                                <Text fw={700} size="lg">{result.contrastHighlight.gameName}</Text>
+                                                <Text size="sm" mt="xs">{result.contrastHighlight.reason}</Text>
+                                            </Card>
+                                        )}
+                                    </Stack>
+                                </SimpleGrid>
+                            </Stack>
+                        </ScrollArea>
+                    )
+                }
             </Modal >
 
             <AISettingsModal

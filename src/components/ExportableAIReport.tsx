@@ -129,23 +129,23 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
 
                             {/* Emotional Palette */}
                             {data.emotionalPalette && (
-                                <Box>
+                                <Box mt="md">
                                     <Text fw={700} mb="sm" size="sm" c="dimmed">情感色谱</Text>
-                                    <Stack gap="xs">
-                                        {data.emotionalPalette.slice(0, 4).map((e, i) => (
-                                            <Group key={i} justify="space-between">
-                                                <Text size="sm" fw={500}>{e.emotion}</Text>
-                                                <Group gap="xs" style={{ flex: 1 }} justify="flex-end">
-                                                    <Progress
-                                                        value={e.percentage}
-                                                        color={['red', 'blue', 'green', 'orange'][i % 4]}
-                                                        size="md"
-                                                        radius="xl"
-                                                        w={120}
-                                                    />
-                                                    <Text size="xs" w={30} ta="right" c="dimmed">{e.percentage}%</Text>
+                                    <Stack gap="sm">
+                                        {data.emotionalPalette.slice(0, 5).map((e, i) => (
+                                            <Box key={i}>
+                                                <Group justify="space-between" mb={2}>
+                                                    <Text size="sm" fw={700} c="gray.3">{e.emotion}</Text>
+                                                    <Text size="xs" c="dimmed">{e.percentage}%</Text>
                                                 </Group>
-                                            </Group>
+                                                <Progress
+                                                    value={e.percentage}
+                                                    color={['red', 'blue', 'green', 'orange', 'grape', 'cyan'][i % 6]}
+                                                    size="lg"
+                                                    radius="sm"
+                                                    bg="rgba(255,255,255,0.05)"
+                                                />
+                                            </Box>
                                         ))}
                                     </Stack>
                                 </Box>
