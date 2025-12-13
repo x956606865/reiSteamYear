@@ -255,7 +255,7 @@ export function AIReportModal({ opened, onClose, year, games, reviews }: AIRepor
                 )}
             </div>
 
-            <Modal opened={opened} onClose={onClose} >
+            <Modal opened={opened} onClose={onClose} size="xl" centered>
                 <Group>
                     <Text fw={700}>AI 年度游戏报告 {year}</Text>
                     <Group gap="xs">

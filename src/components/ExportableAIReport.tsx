@@ -70,7 +70,7 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                 {/* Header */}
                 <Group justify="space-between" align="start">
                     <Stack gap={0}>
-                        <Text size="xl" fw={900} c="dimmed" style={{ letterSpacing: 2 }}>ANNUAL REPORT {year}</Text>
+                        <Text size="xl" fw={900} c="dimmed" style={{ letterSpacing: 2 }}>年度游戏报告 {year}</Text>
                         <Title p={0} style={{ fontSize: 48, lineHeight: 1.1 }}>{data.persona}</Title>
                         {data.annualTitle && (
                             <Text
@@ -114,7 +114,7 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                         <Stack gap="xl">
                             {/* Radar Chart */}
                             <Box bg="rgba(255,255,255,0.03)" p="md" style={{ borderRadius: 16 }}>
-                                <Text fw={700} ta="center" mb="md" c="dimmed">GAME DNA</Text>
+                                <Text fw={700} ta="center" mb="md" c="dimmed">游戏基因</Text>
                                 <div style={{ height: 260, width: '100%' }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
@@ -130,7 +130,7 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                             {/* Emotional Palette */}
                             {data.emotionalPalette && (
                                 <Box>
-                                    <Text fw={700} mb="sm" size="sm" c="dimmed">EMOTIONAL PALETTE</Text>
+                                    <Text fw={700} mb="sm" size="sm" c="dimmed">情感色谱</Text>
                                     <Stack gap="xs">
                                         {data.emotionalPalette.slice(0, 4).map((e, i) => (
                                             <Group key={i} justify="space-between">
@@ -158,7 +158,7 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                         <Stack gap="xl">
                             {/* Summary Text */}
                             <Box>
-                                <Text size="sm" c="dimmed" mb="xs" fw={700}>SUMMARY</Text>
+                                <Text size="sm" c="dimmed" mb="xs" fw={700}>年度总结</Text>
                                 <Text style={{ lineHeight: 1.6 }} c="gray.3">
                                     {data.summary}
                                 </Text>
@@ -167,7 +167,7 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                             {/* RPG Stats */}
                             {data.rpgStats && (
                                 <Box>
-                                    <Text size="sm" c="dimmed" mb="sm" fw={700}>RPG ATTRIBUTES</Text>
+                                    <Text size="sm" c="dimmed" mb="sm" fw={700}>RPG 属性面板</Text>
                                     <SimpleGrid cols={2} spacing="xs">
                                         {rpgStatsData.map(stat => (
                                             <Box key={stat.label} p="xs" bg="rgba(255,255,255,0.05)" style={{ borderRadius: 8 }}>
@@ -206,7 +206,7 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                         <Group align="start" gap="sm">
                             <Text size="lg">💔</Text>
                             <Box>
-                                <Text size="xs" c="red" fw={700} tt="uppercase">The One That Got Away</Text>
+                                <Text size="xs" c="red" fw={700} tt="uppercase">沧海遗珠</Text>
                                 <Text fw={700} size="md">{data.backlogSuggestion.gameName}</Text>
                                 <Text size="xs" c="dimmed" lineClamp={2}>{data.backlogSuggestion.reason}</Text>
                             </Box>
@@ -216,7 +216,7 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                         <Group align="start" gap="sm">
                             <Text size="lg">🏷️</Text>
                             <Box>
-                                <Text size="xs" c="orange" fw={700} tt="uppercase">Gap Moe Highlight</Text>
+                                <Text size="xs" c="orange" fw={700} tt="uppercase">反差萌时刻</Text>
                                 <Text fw={700} size="md">{data.contrastHighlight.gameName}</Text>
                                 <Text size="xs" c="dimmed" lineClamp={2}>{data.contrastHighlight.reason}</Text>
                             </Box>
