@@ -136,11 +136,11 @@ export default function SummaryPage() {
                     cacheBust: true,
                     backgroundColor: '#1A1B1E',
                     pixelRatio: 2,
-                    // @ts-ignore - skipOnError is a valid runtime option but missing from types
-                    skipOnError: true, // Ignore image loading errors
+                    // @ts-ignore
+                    skipOnError: false, // Don't skip errors to debug
                     style: {
-                        // When hidden, sometimes layout is weird. 
-                        // But we put it in an absolute container with valid size.
+                        opacity: '1',
+                        visibility: 'visible',
                     }
                 });
                 download(dataUrl, 'steam-year-list.png');
