@@ -10,7 +10,8 @@ import { useRef, useMemo, useState } from "react";
 import { toPng } from "html-to-image";
 import download from "downloadjs";
 import { Header } from "@/components/Header";
-import { IconDownload, IconPhoto } from "@tabler/icons-react";
+import { IconDownload, IconPhoto, IconSparkles } from "@tabler/icons-react";
+import { AIReportModal } from "@/components/AIReportModal";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -21,6 +22,7 @@ export default function SummaryPage() {
     const cardRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
     const [isExportingList, setIsExportingList] = useState(false);
+    const [aiModalOpen, setAiModalOpen] = useState(false);
 
     const summaryData = useMemo(() => {
         if (!gamesData?.games || !session?.user) return null;
@@ -93,7 +95,8 @@ export default function SummaryPage() {
             playedCount: played,
             completionRate,
             topGames: ratedGames.slice(0, 3) as any[],
-            allRatedGames: ratedGames
+            allRatedGames: ratedGames,
+            allGames: games // Export for AI
         };
     }, [gamesData, reviews, session]);
 
@@ -238,6 +241,15 @@ export default function SummaryPage() {
                         >
                             导出数据 (JSON)
                         </Button>
+                        <Button
+                            rightSection={<IconSparkles size={16} />}
+                            size="lg"
+                            onClick={() => setAiModalOpen(true)}
+                            variant="gradient"
+                            gradient={{ from: 'grape', to: 'violet' }}
+                        >
+                            AI 年度报告
+                        </Button>
                     </Group>
 
                     <SummaryCard ref={cardRef} data={summaryData} />
@@ -253,6 +265,14 @@ export default function SummaryPage() {
                     year={new Date().getFullYear()}
                 />
             </div>
+
+            <AIReportModal
+                opened={aiModalOpen}
+                onClose={() => setAiModalOpen(false)}
+                year={2024}
+                games={summaryData.allGames}
+                reviews={reviews}
+            />
         </>
     );
 }
