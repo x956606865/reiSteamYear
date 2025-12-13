@@ -2,6 +2,7 @@
 
 import { Group, Box, Title, UnstyledButton, Text, Container } from '@mantine/core';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import classes from './Navbar.module.css';
 
 const links = [
@@ -12,6 +13,16 @@ const links = [
 export function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
+    const [visible, setVisible] = useState(true);
+
+    useEffect(() => {
+        // Hide navbar on share domain
+        if (typeof window !== 'undefined' && window.location.hostname === 'share.moukeer.com') {
+            setVisible(false);
+        }
+    }, []);
+
+    if (!visible) return null;
 
     const items = links.map((link) => (
         <UnstyledButton

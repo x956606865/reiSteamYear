@@ -12,10 +12,21 @@ import download from "downloadjs";
 import { Header } from "@/components/Header";
 import { IconDownload, IconPhoto, IconSparkles } from "@tabler/icons-react";
 import { AIReportModal } from "@/components/AIReportModal";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { isShareDomain } from "@/utils/domain";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function SummaryPage() {
+    const router = useRouter();
+
+    useEffect(() => {
+        if (isShareDomain()) {
+            router.replace('/');
+        }
+    }, [router]);
+
     const { data: session } = useSession();
     const { data: gamesData, isLoading } = useSWR(session ? '/api/games' : null, fetcher);
     const { reviews, manualGames } = useReviewStore();
