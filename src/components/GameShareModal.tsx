@@ -1,4 +1,4 @@
-import { Modal, Button, Group, Stack, Text, Center, Loader } from '@mantine/core';
+import { Modal, Button, Group, Stack, Text, Center, Loader, SegmentedControl } from '@mantine/core';
 import { IconDownload } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
@@ -14,6 +14,7 @@ interface GameShareModalProps {
 export function GameShareModal({ opened, onClose, data }: GameShareModalProps) {
     const exportRef = useRef<HTMLDivElement>(null);
     const [exporting, setExporting] = useState(false);
+    const [chartStyle, setChartStyle] = useState<'list' | 'radar'>('list');
 
     const handleExport = async () => {
         if (!exportRef.current) return;
@@ -52,10 +53,20 @@ export function GameShareModal({ opened, onClose, data }: GameShareModalProps) {
                     maxHeight: '70vh',
                     overflowY: 'auto'
                 }}>
-                    <ExportableSingleGame ref={exportRef} {...data} />
+                    <ExportableSingleGame ref={exportRef} {...data} chartStyle={chartStyle} />
                 </div>
 
                 <Group mt="md">
+                    {data.listType === 'manga' && (
+                        <SegmentedControl
+                            value={chartStyle}
+                            onChange={(val) => setChartStyle(val as 'list' | 'radar')}
+                            data={[
+                                { label: '列表', value: 'list' },
+                                { label: '雷达图', value: 'radar' },
+                            ]}
+                        />
+                    )}
                     <Button
                         leftSection={<IconDownload size={16} />}
                         onClick={handleExport}
