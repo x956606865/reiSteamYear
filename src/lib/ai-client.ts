@@ -26,6 +26,23 @@ export interface AIAnalysisResult {
         social: number;
         relaxing: number;
     };
+    rpgStats: {
+        STR: number;
+        DEX: number;
+        INT: number;
+        WIS: number;
+        CHA: number;
+        LUCK: number;
+    };
+    emotionalPalette: Array<{ emotion: string; percentage: number }>;
+    backlogSuggestion?: {
+        gameName: string;
+        reason: string;
+    };
+    contrastHighlight?: {
+        gameName: string;
+        reason: string;
+    };
     mostPlayedGenre: string;
     annualTitle?: string;
     completionistScore?: number; // 0-100
@@ -126,12 +143,31 @@ Strictly adhere to this JSON schema:
   "persona": "String (e.g. '硬核战术家', '剧情体验党')",
   "annualTitle": "String (4个字的创造性年度称号, e.g. '赛博苦行', '像素飞升')",
   "summary": "String (2-3 sentences, emotional and insightful summary)",
+  "rpgStats": {
+     "STR": "Number (0-100, 战斗强度/肝度)",
+     "DEX": "Number (0-100, 操作/反应要求)",
+     "INT": "Number (0-100, 策略/解谜深度)",
+     "WIS": "Number (0-100, 剧情深意/甚至感悟)",
+     "CHA": "Number (0-100, 联机/社交/社区互动)",
+     "LUCK": "Number (0-100, 随机性/Rogue元素)"
+  },
+  "emotionalPalette": [
+     { "emotion": "String (e.g. '热血', '治愈')", "percentage": "Number (0-100)" }
+  ],
+  "backlogSuggestion": {
+     "gameName": "String (Name of a game from the user's played list that was played < 5h)",
+     "reason": "String (Why they should pick it up again)"
+  },
+  "contrastHighlight": {
+     "gameName": "String (The outlier game)",
+     "reason": "String (Why it contrasts with their usual taste)"
+  },
   "keywords": ["String", "String", "String", "String", "String"],
   "radarChart": { "action": 0-100, "strategy": 0-100, "story": 0-100, "artistic": 0-100, "social": 0-100, "relaxing": 0-100 },
   "mostPlayedGenre": "String",
-  "completionistScore": "Number (0-100, based on 'beaten' ratio and dedication)",
-  "creativeReview": "String (A witty or deep one-sentence observation about the player's taste)",
-  "hiddenGem": "String (Optional, pick a highly rated indie game)"
+  "completionistScore": "Number",
+  "creativeReview": "String",
+  "hiddenGem": "String (Optional)"
 }
 IMPORTANT: Output ALL string values in Simplified Chinese (简体中文).
 Do not output markdown code blocks. Output ONLY raw JSON.
