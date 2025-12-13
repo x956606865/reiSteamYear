@@ -38,12 +38,12 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
     const rpgStatsData = useMemo(() => {
         if (!data.rpgStats) return [];
         return [
-            { label: '力量 STR', value: data.rpgStats.STR },
-            { label: '敏捷 DEX', value: data.rpgStats.DEX },
-            { label: '智力 INT', value: data.rpgStats.INT },
-            { label: '感知 WIS', value: data.rpgStats.WIS },
-            { label: '魅力 CHA', value: data.rpgStats.CHA },
-            { label: '幸运 LUCK', value: data.rpgStats.LUCK }
+            { label: '力量 (战斗强度)', value: data.rpgStats.STR, color: 'red' },
+            { label: '敏捷 (操作反应)', value: data.rpgStats.DEX, color: 'orange' },
+            { label: '智力 (策略解谜)', value: data.rpgStats.INT, color: 'blue' },
+            { label: '感知 (剧情审美)', value: data.rpgStats.WIS, color: 'cyan' },
+            { label: '魅力 (联机社交)', value: data.rpgStats.CHA, color: 'pink' },
+            { label: '幸运 (随机要素)', value: data.rpgStats.LUCK, color: 'yellow' }
         ];
     }, [data]);
 
@@ -193,11 +193,11 @@ export const ExportableAIReport = forwardRef<HTMLDivElement, ExportableAIReportP
                                     <SimpleGrid cols={2} spacing="xs">
                                         {rpgStatsData.map(stat => (
                                             <Box key={stat.label} p="xs" bg="rgba(255,255,255,0.05)" style={{ borderRadius: 8 }}>
-                                                <Group justify="space-between" mb={4}>
-                                                    <Text size="xs" c="dimmed">{stat.label}</Text>
+                                                <Group justify="space-between" mb={6}>
+                                                    <Text size="xs" c="dimmed" fw={700}>{stat.label}</Text>
                                                     <Text fw={900} c={stat.value > 80 ? 'yellow' : 'white'}>{stat.value}</Text>
                                                 </Group>
-                                                <Progress value={stat.value} size={4} color="gray" />
+                                                <Progress value={stat.value} size="sm" color={stat.color} radius="sm" />
                                             </Box>
                                         ))}
                                     </SimpleGrid>
