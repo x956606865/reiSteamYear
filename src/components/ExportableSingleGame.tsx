@@ -271,7 +271,7 @@ export const ExportableSingleGame = forwardRef<HTMLDivElement, SingleGameExportP
                 <Card radius="lg" bg="dark.6" padding={0} withBorder style={{ borderColor: '#2C2E33', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
                     {listType === 'manga' ? (
                         <Group gap={0} align="stretch">
-                            <div style={{ width: 280, position: 'relative', flexShrink: 0, borderRight: '1px solid #2C2E33' }}>
+                            <div style={{ width: 340, position: 'relative', flexShrink: 0, borderRight: '1px solid #2C2E33' }}>
                                 <img
                                     src={getProxyUrl(game.coverUrl)}
                                     style={{
